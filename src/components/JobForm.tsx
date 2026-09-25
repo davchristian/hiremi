@@ -2,16 +2,31 @@
 
 import { useState, type FormEvent } from "react";
 import { Modal } from "@/components/Modal";
+import { DatePicker } from "@/components/DatePicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+
+export type NewJobStage = "wishlist" | "applied";
 
 export type NewJobInput = {
   company: string;
   role: string;
+  stage: NewJobStage;
   appliedDate: string;
   link: string;
   notes: string;
 };
 
-const emptyForm: NewJobInput = { company: "", role: "", appliedDate: "", link: "", notes: "" };
+const emptyForm: NewJobInput = {
+  company: "",
+  role: "",
+  stage: "wishlist",
+  appliedDate: "",
+  link: "",
+  notes: "",
+};
 
 export function JobForm({
   onClose,
@@ -44,38 +59,41 @@ export function JobForm({
   return (
     <Modal title="add application" onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <Field label="company">
-          <input
+        <Field label="company" htmlFor="new-company">
+          <Input
+            id="new-company"
             autoFocus
             required
             value={form.company}
             onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
             className={inputClass}
-            placeholder="Acme Corp"
+            placeholder="Grab"
           />
         </Field>
 
-        <Field label="role">
-          <input
+        <Field label="role" htmlFor="new-role">
+          <Input
+            id="new-role"
             required
             value={form.role}
             onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
             className={inputClass}
-            placeholder="Senior Software Engineer"
+            placeholder="Software Engineer I"
           />
         </Field>
 
-        <Field label="applied date (optional)">
-          <input
-            type="date"
+        <Field label="applied date (optional)" htmlFor="new-applied-date">
+          <DatePicker
+            id="new-applied-date"
             value={form.appliedDate}
-            onChange={(e) => setForm((f) => ({ ...f, appliedDate: e.target.value }))}
-            className={inputClass}
+            onChange={(appliedDate) => setForm((f) => ({ ...f, appliedDate }))}
+            placeholder="not applied yet"
           />
         </Field>
 
-        <Field label="link (optional)">
-          <input
+        <Field label="link (optional)" htmlFor="new-link">
+          <Input
+            id="new-link"
             type="url"
             value={form.link}
             onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))}
@@ -84,37 +102,106 @@ export function JobForm({
           />
         </Field>
 
-        <Field label="notes (optional)">
-          <textarea
+        <Field label="notes (optional)" htmlFor="new-notes">
+          <Textarea
+            id="new-notes"
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             rows={3}
-            className={`${inputClass} resize-none font-sans`}
+            className="resize-none bg-panel-alt font-sans text-sm"
           />
         </Field>
 
+        <Field label="add as">
+          <div className="grid grid-cols-2 gap-2">
+            <StageOption
+              active={form.stage === "wishlist"}
+              accent="wishlist"
+              label="wishlist"
+              hint="saved for later"
+              onSelect={() => setForm((f) => ({ ...f, stage: "wishlist" }))}
+            />
+            <StageOption
+              active={form.stage === "applied"}
+              accent="applied"
+              label="applied"
+              hint="already applied"
+              onSelect={() => setForm((f) => ({ ...f, stage: "applied" }))}
+            />
+          </div>
+        </Field>
+
+        {form.stage === "applied" && !form.appliedDate && (
+          <p className="font-mono text-xs text-text-dim">
+            no date set — today&apos;s date will be used
+          </p>
+        )}
+
         {error && <p className="font-mono text-xs text-rejected">{error}</p>}
 
-        <button
+        <Button
           type="submit"
           disabled={submitting}
-          className="mt-1 rounded bg-applied px-3 py-2 font-mono text-sm font-medium text-base transition-colors hover:bg-applied/90 disabled:opacity-60"
+          className={`mt-1 font-mono text-sm ${
+            form.stage === "applied" ? "" : "bg-wishlist text-background hover:bg-wishlist/80"
+          }`}
         >
-          {submitting ? "adding..." : "add to wishlist"}
-        </button>
+          {submitting ? "adding..." : form.stage === "applied" ? "add to applied" : "add to wishlist"}
+        </Button>
       </form>
     </Modal>
   );
 }
 
-const inputClass =
-  "rounded border border-hairline bg-panel-alt px-3 py-2 font-mono text-sm text-text outline-none focus:border-applied focus:ring-1 focus:ring-applied";
+const inputClass = "bg-panel-alt font-mono text-sm";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-xs text-text-muted">{label}</span>
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={htmlFor} className="font-mono text-xs font-normal text-text-muted">
+        {label}
+      </Label>
       {children}
-    </label>
+    </div>
+  );
+}
+
+function StageOption({
+  active,
+  accent,
+  label,
+  hint,
+  onSelect,
+}: {
+  active: boolean;
+  accent: "wishlist" | "applied";
+  label: string;
+  hint: string;
+  onSelect: () => void;
+}) {
+  const accentBorder = accent === "wishlist" ? "border-wishlist" : "border-applied";
+  const accentText = accent === "wishlist" ? "text-wishlist" : "text-applied";
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className={`flex flex-col items-start gap-0.5 rounded-md border px-3 py-2 text-left outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 ${
+        active
+          ? `${accentBorder} bg-panel-alt`
+          : "border-hairline bg-panel-alt/40 hover:border-text-dim"
+      }`}
+    >
+      <span className={`font-mono text-sm ${active ? accentText : "text-text"}`}>{label}</span>
+      <span className="font-mono text-[11px] text-text-dim">{hint}</span>
+    </button>
   );
 }

@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/Modal";
+import { DatePicker } from "@/components/DatePicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import type { ClientJob } from "@/lib/types";
-import { STAGE_CONFIG, STAGE_ORDER, nextStage, previousStage, type Stage } from "@/lib/stage";
+import { STAGE_CONFIG, STAGE_ORDER, isStale, nextStage, previousStage, type Stage } from "@/lib/stage";
 import { daysAgo, shortId } from "@/lib/format";
 
 export type JobEditInput = {
@@ -66,30 +72,43 @@ export function JobDetail({
   }
 
   return (
-    <Modal title={`${shortId(job.id)}`} onClose={onClose}>
+    <Modal title={shortId(job.id)} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <span
-            className={`rounded-full px-2 py-0.5 font-mono text-xs uppercase tracking-wide ${config.textClass} bg-panel-alt`}
+          <Badge
+            variant="secondary"
+            className={`font-mono text-xs uppercase tracking-wide ${config.textClass}`}
           >
             {config.label}
+          </Badge>
+          <span className="flex items-center gap-2 font-mono text-xs">
+            {isStale(job) && (
+              <Badge className="bg-interview/15 font-mono text-[10px] uppercase tracking-wide text-interview">
+                stale
+              </Badge>
+            )}
+            <span className="text-text-dim">{daysAgo(job.appliedDate ?? job.createdAt)}</span>
           </span>
-          <span className="font-mono text-xs text-text-dim">{daysAgo(job.appliedDate ?? job.createdAt)}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!back}
             onClick={() => back && onMove(back)}
-            className="flex-1 rounded border border-hairline px-2 py-1.5 font-mono text-xs text-text-muted transition-colors hover:border-text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex-1 font-mono text-xs text-text-muted"
           >
             ← back
-          </button>
+          </Button>
+          {/* Native select: Base UI's Select popup cannot stay open inside the dialog's
+              focus trap (base-ui 1.6 composition bug), so this stays native — styled to
+              match the shadcn trigger. */}
           <select
             value={job.stage}
             onChange={(e) => onMove(e.target.value as Stage)}
-            className="flex-1 rounded border border-hairline bg-panel-alt px-2 py-1.5 font-mono text-xs text-text outline-none focus:border-applied"
+            aria-label="stage"
+            className="h-7 flex-1 rounded-[min(var(--radius-md),12px)] border border-input bg-panel-alt px-2 font-mono text-xs text-text outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             {STAGE_ORDER.map((s) => (
               <option key={s} value={s}>
@@ -97,88 +116,124 @@ export function JobDetail({
               </option>
             ))}
           </select>
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             disabled={!forward}
             onClick={() => forward && onMove(forward)}
-            className="flex-1 rounded border border-hairline px-2 py-1.5 font-mono text-xs text-text-muted transition-colors hover:border-text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex-1 font-mono text-xs text-text-muted"
           >
             forward →
-          </button>
+          </Button>
         </div>
 
-        <Field label="company">
-          <input value={company} onChange={(e) => setCompany(e.target.value)} className={inputClass} />
-        </Field>
-
-        <Field label="role">
-          <input value={role} onChange={(e) => setRole(e.target.value)} className={inputClass} />
-        </Field>
-
-        <Field label="applied date">
-          <input
-            type="date"
-            value={appliedDate}
-            onChange={(e) => setAppliedDate(e.target.value)}
+        <Field label="company" htmlFor="edit-company">
+          <Input
+            id="edit-company"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
             className={inputClass}
           />
         </Field>
 
-        <Field label="link">
-          <input
+        <Field label="role" htmlFor="edit-role">
+          <Input
+            id="edit-role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="applied date" htmlFor="edit-applied-date">
+          <DatePicker
+            id="edit-applied-date"
+            value={appliedDate}
+            onChange={setAppliedDate}
+            placeholder="no date set"
+          />
+        </Field>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="edit-link" className="font-mono text-xs font-normal text-text-muted">
+              link
+            </Label>
+            {job.link && (
+              <a
+                href={job.link}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-xs text-applied hover:underline"
+              >
+                open ↗
+              </a>
+            )}
+          </div>
+          <Input
+            id="edit-link"
             type="url"
             value={link}
             onChange={(e) => setLink(e.target.value)}
             placeholder="https://..."
             className={inputClass}
           />
-        </Field>
+        </div>
 
-        <Field label="notes">
-          <textarea
+        <Field label="notes" htmlFor="edit-notes">
+          <Textarea
+            id="edit-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={4}
-            className={`${inputClass} resize-none font-sans`}
+            className="resize-none bg-panel-alt font-sans text-sm"
           />
         </Field>
 
         <div className="flex items-center justify-between gap-2 border-t border-hairline pt-4">
-          <button
-            type="button"
+          <Button
+            variant={confirmDelete ? "destructive" : "outline"}
+            size="sm"
             onClick={handleDelete}
             disabled={deleting}
-            className={`rounded border px-3 py-1.5 font-mono text-xs transition-colors disabled:opacity-60 ${
-              confirmDelete
-                ? "border-rejected bg-rejected/10 text-rejected"
-                : "border-hairline text-text-muted hover:border-rejected hover:text-rejected"
+            className={`font-mono text-xs ${
+              confirmDelete ? "" : "text-text-muted hover:border-rejected hover:text-rejected"
             }`}
           >
             {deleting ? "deleting..." : confirmDelete ? "confirm delete?" : "delete"}
-          </button>
+          </Button>
 
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded bg-applied px-3 py-1.5 font-mono text-xs font-medium text-base transition-colors hover:bg-applied/90 disabled:opacity-40"
+            className="font-mono text-xs"
           >
             {saving ? "saving..." : "save changes"}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
   );
 }
 
-const inputClass =
-  "rounded border border-hairline bg-panel-alt px-3 py-2 font-mono text-sm text-text outline-none focus:border-applied focus:ring-1 focus:ring-applied";
+const inputClass = "bg-panel-alt font-mono text-sm";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-xs text-text-muted">{label}</span>
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={htmlFor} className="font-mono text-xs font-normal text-text-muted">
+        {label}
+      </Label>
       {children}
-    </label>
+    </div>
   );
 }

@@ -4,6 +4,9 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -67,25 +70,25 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </h1>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="font-mono text-xs text-text-muted">
+        <Label htmlFor="email" className="font-mono text-xs font-normal text-text-muted">
           email
-        </label>
-        <input
+        </Label>
+        <Input
           id="email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded border border-hairline bg-panel-alt px-3 py-2 font-mono text-sm text-text outline-none focus:border-applied focus:ring-1 focus:ring-applied"
+          className="bg-panel-alt font-mono text-sm"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="font-mono text-xs text-text-muted">
+        <Label htmlFor="password" className="font-mono text-xs font-normal text-text-muted">
           password
-        </label>
-        <input
+        </Label>
+        <Input
           id="password"
           type="password"
           required
@@ -93,7 +96,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded border border-hairline bg-panel-alt px-3 py-2 font-mono text-sm text-text outline-none focus:border-applied focus:ring-1 focus:ring-applied"
+          className="bg-panel-alt font-mono text-sm"
         />
       </div>
 
@@ -103,13 +106,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={status === "loading"}
-        className="mt-1 rounded bg-applied px-3 py-2 font-mono text-sm font-medium text-base transition-colors hover:bg-applied/90 disabled:opacity-60"
-      >
+      <Button type="submit" disabled={status === "loading"} className="mt-1 font-mono text-sm">
         {status === "loading" ? "working..." : mode === "sign-in" ? "sign in" : "create account"}
-      </button>
+      </Button>
 
       <p className="text-center font-mono text-xs text-text-muted">
         {mode === "sign-in" ? (

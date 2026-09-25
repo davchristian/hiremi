@@ -19,7 +19,7 @@ export default async function BoardPage() {
   const clientJobs = jobs.map(toClientJob);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-base">
+    <div className="flex h-dvh flex-col overflow-hidden bg-base">
       <Header email={user.email ?? ""} />
       <Board initialJobs={clientJobs} />
     </div>

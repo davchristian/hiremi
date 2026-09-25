@@ -3,11 +3,15 @@ export function shortId(id: string): string {
   return id.replace(/-/g, "").slice(0, 7);
 }
 
+/** Whole days elapsed since the given date. */
+export function daysSince(date: Date | string): number {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 /** Formats a date as a git-log-style relative age, e.g. "3d ago", "today". */
 export function daysAgo(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  const diffMs = Date.now() - d.getTime();
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const days = daysSince(date);
 
   if (days <= 0) return "today";
   if (days === 1) return "1d ago";
