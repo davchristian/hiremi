@@ -143,7 +143,9 @@ export function JobForm({
           type="submit"
           disabled={submitting}
           className={`mt-1 font-mono text-sm ${
-            form.stage === "applied" ? "" : "bg-wishlist text-background hover:bg-wishlist/80"
+            form.stage === "applied"
+              ? "bg-applied text-background hover:bg-applied/80"
+              : "bg-wishlist text-background hover:bg-wishlist/80"
           }`}
         >
           {submitting ? "adding..." : form.stage === "applied" ? "add to applied" : "add to wishlist"}
@@ -200,7 +202,7 @@ function StageOption({
           : "border-hairline bg-panel-alt/40 hover:border-text-dim"
       }`}
     >
-      <span className={`font-mono text-sm ${active ? accentText : "text-text"}`}>{label}</span>
+      <span className={`font-mono text-sm ${active ? accentText : "text-text-muted"}`}>{label}</span>
       <span className="font-mono text-[11px] text-text-dim">{hint}</span>
     </button>
   );

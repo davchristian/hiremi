@@ -5,20 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-base: #0b0e14;
-  --color-panel: #131820;
-  --color-panel-alt: #1b222c;
-  --color-hairline: #242c38;
+  --color-base: #111111;
+  --color-panel: #1c1c1c;
+  --color-panel-alt: #252525;
+  --color-hairline: #303030;
 
-  --color-text: #e6edf3;
-  --color-text-muted: #7d8895;
-  --color-text-dim: #4b5563;
+  --color-text: #f5f0e6;
+  --color-text-muted: #99938a;
+  --color-text-dim: #77726b;
 
-  --color-wishlist: #b392f0;
-  --color-applied: #4ec9e0;
-  --color-interview: #e3b341;
-  --color-offer: #3fb950;
-  --color-rejected: #f85149;
+  --color-wishlist: #f5f0e6;
+  --color-applied: #ff6b35;
+  --color-interview: #e6a93f;
+  --color-offer: #6bbf6a;
+  --color-rejected: #c95732;
 }
 
 @theme inline {
@@ -52,7 +52,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Single dark terminal theme: shadcn variables mapped to the design tokens above. */
 :root {
   --background: var(--color-base);
   --foreground: var(--color-text);
@@ -60,7 +59,7 @@
   --card-foreground: var(--color-text);
   --popover: var(--color-panel-alt);
   --popover-foreground: var(--color-text);
-  --primary: var(--color-applied);
+  --primary: var(--color-text);
   --primary-foreground: var(--color-base);
   --secondary: var(--color-panel-alt);
   --secondary-foreground: var(--color-text);
@@ -82,7 +81,6 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
-  /* Tailwind v4 preflight drops the default button pointer cursor; restore it. */
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
@@ -94,7 +92,6 @@
   color: var(--color-base);
 }
 
-/* Thin, terminal-appropriate scrollbars */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-hairline) transparent;

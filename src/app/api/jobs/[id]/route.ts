@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { deleteJob, updateJob, updateJobSchema } from "@/lib/jobs";
+import { toClientJob } from "@/lib/types";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ job });
+  return NextResponse.json({ job: toClientJob(job) });
 }
 
 export async function DELETE(_request: Request, { params }: RouteParams) {

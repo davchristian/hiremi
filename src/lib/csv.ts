@@ -12,7 +12,6 @@ const HEADERS = [
   "updated_at",
 ] as const;
 
-/** Quotes a CSV field when it contains a delimiter, quote, or newline. */
 function escapeField(value: string): string {
   return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }

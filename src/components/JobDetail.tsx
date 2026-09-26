@@ -20,6 +20,26 @@ export type JobEditInput = {
   notes: string;
 };
 
+type Field = keyof JobEditInput;
+
+const FIELDS: readonly Field[] = ["company", "role", "appliedDate", "link", "notes"];
+
+function editableValues(job: ClientJob): JobEditInput {
+  return {
+    company: job.company,
+    role: job.role,
+    appliedDate: job.appliedDate?.slice(0, 10) ?? "",
+    link: job.link ?? "",
+    notes: job.notes,
+  };
+}
+
+function pick(values: JobEditInput, fields: readonly Field[]): Partial<JobEditInput> {
+  const picked: Partial<JobEditInput> = {};
+  for (const field of fields) picked[field] = values[field];
+  return picked;
+}
+
 export function JobDetail({
   job,
   onClose,
@@ -34,29 +54,45 @@ export function JobDetail({
   onDelete: () => Promise<void> | void;
 }) {
   const config = STAGE_CONFIG[job.stage];
-  const [company, setCompany] = useState(job.company);
-  const [role, setRole] = useState(job.role);
-  const [appliedDate, setAppliedDate] = useState(job.appliedDate?.slice(0, 10) ?? "");
-  const [link, setLink] = useState(job.link ?? "");
-  const [notes, setNotes] = useState(job.notes);
+  const current = editableValues(job);
+  const [baseline, setBaseline] = useState(current);
+  const [form, setForm] = useState(current);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const dirty =
-    company !== job.company ||
-    role !== job.role ||
-    appliedDate !== (job.appliedDate?.slice(0, 10) ?? "") ||
-    link !== (job.link ?? "") ||
-    notes !== job.notes;
+  const updatedElsewhere = FIELDS.filter(
+    (field) => current[field] !== baseline[field] && form[field] === baseline[field],
+  );
+  if (updatedElsewhere.length > 0) {
+    const patch = pick(current, updatedElsewhere);
+    setBaseline({ ...baseline, ...patch });
+    setForm({ ...form, ...patch });
+  }
 
+  const changed = FIELDS.filter((field) => form[field] !== baseline[field]);
   const back = previousStage(job.stage);
   const forward = nextStage(job.stage);
 
+  function update(field: Field, value: string) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+  }
+
   async function handleSave() {
+    if (!form.company.trim() || !form.role.trim()) {
+      setError("company and role are required");
+      return;
+    }
+
+    const submitted = form;
     setSaving(true);
+    setError(null);
     try {
-      await onSave({ company, role, appliedDate, link, notes });
+      await onSave(pick(submitted, changed));
+      setBaseline(submitted);
+    } catch {
+      setError("failed to save changes — your edits are still here, try again");
     } finally {
       setSaving(false);
     }
@@ -101,9 +137,6 @@ export function JobDetail({
           >
             ← back
           </Button>
-          {/* Native select: Base UI's Select popup cannot stay open inside the dialog's
-              focus trap (base-ui 1.6 composition bug), so this stays native — styled to
-              match the shadcn trigger. */}
           <select
             value={job.stage}
             onChange={(e) => onMove(e.target.value as Stage)}
@@ -130,8 +163,8 @@ export function JobDetail({
         <Field label="company" htmlFor="edit-company">
           <Input
             id="edit-company"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
+            value={form.company}
+            onChange={(e) => update("company", e.target.value)}
             className={inputClass}
           />
         </Field>
@@ -139,8 +172,8 @@ export function JobDetail({
         <Field label="role" htmlFor="edit-role">
           <Input
             id="edit-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
+            value={form.role}
+            onChange={(e) => update("role", e.target.value)}
             className={inputClass}
           />
         </Field>
@@ -148,8 +181,8 @@ export function JobDetail({
         <Field label="applied date" htmlFor="edit-applied-date">
           <DatePicker
             id="edit-applied-date"
-            value={appliedDate}
-            onChange={setAppliedDate}
+            value={form.appliedDate}
+            onChange={(value) => update("appliedDate", value)}
             placeholder="no date set"
           />
         </Field>
@@ -173,8 +206,8 @@ export function JobDetail({
           <Input
             id="edit-link"
             type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
+            value={form.link}
+            onChange={(e) => update("link", e.target.value)}
             placeholder="https://..."
             className={inputClass}
           />
@@ -183,12 +216,18 @@ export function JobDetail({
         <Field label="notes" htmlFor="edit-notes">
           <Textarea
             id="edit-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            value={form.notes}
+            onChange={(e) => update("notes", e.target.value)}
             rows={4}
             className="resize-none bg-panel-alt font-sans text-sm"
           />
         </Field>
+
+        {error && (
+          <p role="alert" className="font-mono text-xs text-rejected">
+            {error}
+          </p>
+        )}
 
         <div className="flex items-center justify-between gap-2 border-t border-hairline pt-4">
           <Button
@@ -206,7 +245,7 @@ export function JobDetail({
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={!dirty || saving}
+            disabled={changed.length === 0 || saving}
             className="font-mono text-xs"
           >
             {saving ? "saving..." : "save changes"}

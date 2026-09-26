@@ -1,6 +1,6 @@
 "use client";
 
-import type { ClientJob } from "@/lib/types";
+import { isPendingJob, type ClientJob } from "@/lib/types";
 import type { Stage } from "@/lib/stage";
 import { STAGE_CONFIG } from "@/lib/stage";
 import { JobCard } from "@/components/JobCard";
@@ -21,7 +21,7 @@ export function Column({
   const config = STAGE_CONFIG[stage];
 
   return (
-    <div className="flex h-full min-w-[224px] max-w-[460px] flex-1 basis-0 snap-start flex-col">
+    <div className="flex h-full min-w-[224px] max-w-[460px] flex-1 basis-0 snap-start snap-always flex-col max-sm:max-w-none max-sm:shrink-0 max-sm:basis-full">
       <div className="mb-3 flex items-center gap-2 px-1">
         <span className={`h-2 w-2 rounded-full ${config.dotClass}`} />
         <span className="font-mono text-xs font-medium uppercase tracking-wider text-text-muted">
@@ -40,6 +40,7 @@ export function Column({
             <JobCard
               key={job.id}
               job={job}
+              pending={isPendingJob(job)}
               onOpen={() => onOpenJob(job.id)}
               onMove={(next) => onMoveJob(job.id, next)}
             />

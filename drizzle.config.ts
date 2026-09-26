@@ -1,15 +1,18 @@
+import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
-import "dotenv/config";
 
-// `generate` only reads the schema and doesn't need a live connection, so we
-// fall back to a placeholder; `migrate`/`push` will fail loudly without a
-// real DATABASE_URL, which is the behavior we want.
+config({ path: [".env.local", ".env"], quiet: true });
+
+function sessionPoolerUrl(url: string | undefined): string {
+  return url ? url.replace(/:6543\//, ":5432/") : "postgres://placeholder";
+}
+
 export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://placeholder",
+    url: sessionPoolerUrl(process.env.DATABASE_URL),
   },
   strict: true,
   verbose: true,

@@ -1,4 +1,5 @@
-import type { Job } from "@/db/schema";
+import type { Job, JobSource, Profile } from "@/db/schema";
+import type { JobSourceKind } from "@/lib/source-meta";
 import type { Stage } from "@/lib/stage";
 
 export type ClientJob = {
@@ -12,6 +13,58 @@ export type ClientJob = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ClientProfile = {
+  targetRoles: string[];
+  skills: string[];
+  experienceLevel: Profile["experienceLevel"];
+  locationPreference: string;
+  workMode: Profile["workMode"];
+  blurb: string;
+  hasEmbedding: boolean;
+};
+
+export type ClientSource = {
+  id: string;
+  kind: JobSourceKind;
+  slug: string;
+  label: string;
+  lastFetchedAt: string | null;
+  lastError: string | null;
+};
+
+const PENDING_ID_PREFIX = "pending-";
+
+export function pendingJobId(): string {
+  return `${PENDING_ID_PREFIX}${Math.random().toString(36).slice(2)}`;
+}
+
+export function isPendingJob(job: Pick<ClientJob, "id">): boolean {
+  return job.id.startsWith(PENDING_ID_PREFIX);
+}
+
+export function toClientProfile(profile: Profile): ClientProfile {
+  return {
+    targetRoles: profile.targetRoles,
+    skills: profile.skills,
+    experienceLevel: profile.experienceLevel,
+    locationPreference: profile.locationPreference ?? "",
+    workMode: profile.workMode,
+    blurb: profile.blurb ?? "",
+    hasEmbedding: Boolean(profile.embedding),
+  };
+}
+
+export function toClientSource(source: JobSource): ClientSource {
+  return {
+    id: source.id,
+    kind: source.kind,
+    slug: source.slug,
+    label: source.label,
+    lastFetchedAt: source.lastFetchedAt ? source.lastFetchedAt.toISOString() : null,
+    lastError: source.lastError,
+  };
+}
 
 export function toClientJob(job: Job): ClientJob {
   return {

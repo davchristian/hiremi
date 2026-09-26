@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ClientJob } from "@/lib/types";
+import { isPendingJob, pendingJobId, type ClientJob } from "@/lib/types";
 import { STAGE_CONFIG, STAGE_ORDER, type Stage } from "@/lib/stage";
+import { isoDateToTimestamp, todayISODate } from "@/lib/format";
 import { jobsToCsv } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,21 @@ import { StatsBar } from "@/components/StatsBar";
 import { JobForm, type NewJobInput } from "@/components/JobForm";
 import { JobDetail, type JobEditInput } from "@/components/JobDetail";
 
-function tempId() {
-  return `temp-${Math.random().toString(36).slice(2)}`;
+async function sendJob(url: string, method: "POST" | "PATCH", body: unknown): Promise<ClientJob> {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error("request failed");
+  const { job } = (await res.json()) as { job: ClientJob };
+  return job;
+}
+
+function insertByCreatedAt(jobs: ClientJob[], job: ClientJob): ClientJob[] {
+  if (jobs.some((j) => j.id === job.id)) return jobs;
+  const index = jobs.findIndex((j) => j.createdAt < job.createdAt);
+  return index === -1 ? [...jobs, job] : [...jobs.slice(0, index), job, ...jobs.slice(index)];
 }
 
 export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
@@ -25,8 +39,6 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeStage, setActiveStage] = useState<Stage>("wishlist");
 
-  // Track which column is snapped into view so the mobile stage pills can
-  // highlight it. Columns are direct children of the scroller.
   function handleColumnScroll() {
     const scroller = scrollerRef.current;
     if (!scroller) return;
@@ -51,7 +63,6 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
     column?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
   }
 
-  // Board-level shortcuts: n → new application, / → focus filter.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (isAdding || openJobId || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -93,11 +104,12 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
   }, [filteredJobs]);
 
   function handleExport() {
-    const blob = new Blob([jobsToCsv(jobs)], { type: "text/csv;charset=utf-8" });
+    const saved = jobs.filter((job) => !isPendingJob(job));
+    const blob = new Blob([jobsToCsv(saved)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `applications-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `applications-${todayISODate()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -109,43 +121,35 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
     setTimeout(() => setBanner((current) => (current === message ? null : current)), 4000);
   }
 
-  async function handleAdd(input: NewJobInput) {
-    // Mirror the server's auto-fill: applying without a date defaults to today.
-    const appliedDate =
-      input.appliedDate
-        ? new Date(input.appliedDate).toISOString()
-        : input.stage === "applied"
-          ? new Date().toISOString()
-          : null;
+  function replaceJob(job: ClientJob) {
+    setJobs((prev) => prev.map((j) => (j.id === job.id ? job : j)));
+  }
 
+  async function handleAdd(input: NewJobInput) {
+    const appliedDate = input.appliedDate || (input.stage === "applied" ? todayISODate() : "");
+    const now = new Date().toISOString();
     const optimistic: ClientJob = {
-      id: tempId(),
+      id: pendingJobId(),
       company: input.company.trim(),
       role: input.role.trim(),
       stage: input.stage,
-      appliedDate,
+      appliedDate: appliedDate ? isoDateToTimestamp(appliedDate) : null,
       link: input.link || null,
       notes: input.notes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     setJobs((prev) => [optimistic, ...prev]);
 
     try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company: input.company.trim(),
-          role: input.role.trim(),
-          stage: input.stage,
-          appliedDate: input.appliedDate || undefined,
-          link: input.link || undefined,
-          notes: input.notes || undefined,
-        }),
+      const job = await sendJob("/api/jobs", "POST", {
+        company: optimistic.company,
+        role: optimistic.role,
+        stage: input.stage,
+        appliedDate: appliedDate || undefined,
+        link: input.link || undefined,
+        notes: input.notes || undefined,
       });
-      if (!res.ok) throw new Error("request failed");
-      const { job } = await res.json();
       setJobs((prev) => prev.map((j) => (j.id === optimistic.id ? job : j)));
     } catch {
       setJobs((prev) => prev.filter((j) => j.id !== optimistic.id));
@@ -155,76 +159,64 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
   }
 
   async function handleMove(id: string, stage: Stage) {
-    const previous = jobs;
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === id
-          ? {
-              ...j,
-              stage,
-              appliedDate: stage === "applied" && !j.appliedDate ? new Date().toISOString() : j.appliedDate,
-            }
-          : j,
-      ),
-    );
+    const before = jobs.find((j) => j.id === id);
+    if (!before || before.stage === stage || isPendingJob(before)) return;
+
+    const fillDate = stage === "applied" && !before.appliedDate ? todayISODate() : undefined;
+    replaceJob({
+      ...before,
+      stage,
+      appliedDate: fillDate ? isoDateToTimestamp(fillDate) : before.appliedDate,
+    });
 
     try {
-      const res = await fetch(`/api/jobs/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stage }),
-      });
-      if (!res.ok) throw new Error("request failed");
-      const { job } = await res.json();
-      setJobs((prev) => prev.map((j) => (j.id === id ? job : j)));
+      replaceJob(
+        await sendJob(`/api/jobs/${id}`, "PATCH", {
+          stage,
+          ...(fillDate && { appliedDate: fillDate }),
+        }),
+      );
     } catch {
-      setJobs(previous);
+      replaceJob(before);
       flash("failed to move application");
     }
   }
 
   async function handleSave(id: string, input: Partial<JobEditInput>) {
-    const previous = jobs;
-    setJobs((prev) =>
-      prev.map((j) =>
-        j.id === id
-          ? {
-              ...j,
-              ...(input.company !== undefined && { company: input.company }),
-              ...(input.role !== undefined && { role: input.role }),
-              ...(input.appliedDate !== undefined && {
-                appliedDate: input.appliedDate ? new Date(input.appliedDate).toISOString() : null,
-              }),
-              ...(input.link !== undefined && { link: input.link || null }),
-              ...(input.notes !== undefined && { notes: input.notes }),
-            }
-          : j,
-      ),
-    );
+    const before = jobs.find((j) => j.id === id);
+    if (!before) return;
+
+    replaceJob({
+      ...before,
+      ...(input.company !== undefined && { company: input.company.trim() }),
+      ...(input.role !== undefined && { role: input.role.trim() }),
+      ...(input.appliedDate !== undefined && {
+        appliedDate: input.appliedDate ? isoDateToTimestamp(input.appliedDate) : null,
+      }),
+      ...(input.link !== undefined && { link: input.link.trim() || null }),
+      ...(input.notes !== undefined && { notes: input.notes }),
+    });
 
     try {
-      const res = await fetch(`/api/jobs/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      replaceJob(
+        await sendJob(`/api/jobs/${id}`, "PATCH", {
           ...(input.company !== undefined && { company: input.company }),
           ...(input.role !== undefined && { role: input.role }),
           ...(input.appliedDate !== undefined && { appliedDate: input.appliedDate || null }),
-          ...(input.link !== undefined && { link: input.link || "" }),
+          ...(input.link !== undefined && { link: input.link.trim() }),
           ...(input.notes !== undefined && { notes: input.notes }),
         }),
-      });
-      if (!res.ok) throw new Error("request failed");
-      const { job } = await res.json();
-      setJobs((prev) => prev.map((j) => (j.id === id ? job : j)));
-    } catch {
-      setJobs(previous);
+      );
+    } catch (error) {
+      replaceJob(before);
       flash("failed to save changes");
+      throw error;
     }
   }
 
   async function handleDelete(id: string) {
-    const previous = jobs;
+    const before = jobs.find((j) => j.id === id);
+    if (!before) return;
     setJobs((prev) => prev.filter((j) => j.id !== id));
     setOpenJobId(null);
 
@@ -232,7 +224,7 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
       const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("request failed");
     } catch {
-      setJobs(previous);
+      setJobs((prev) => insertByCreatedAt(prev, before));
       flash("failed to delete application");
     }
   }
@@ -305,12 +297,14 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
       </div>
 
       {banner && (
-        <div className="mx-4 mb-2 shrink-0 rounded border border-rejected/40 bg-rejected/10 px-3 py-2 font-mono text-xs text-rejected sm:mx-6">
+        <div
+          role="alert"
+          className="mx-4 mb-2 shrink-0 rounded border border-rejected/40 bg-rejected/10 px-3 py-2 font-mono text-xs text-rejected sm:mx-6"
+        >
           {banner}
         </div>
       )}
 
-      {/* Mobile: swipe-position indicator + jump navigation for the columns */}
       <div className="flex shrink-0 gap-1.5 overflow-x-auto px-4 pb-2 sm:hidden">
         {STAGE_ORDER.map((stage) => (
           <button
@@ -334,7 +328,7 @@ export function Board({ initialJobs }: { initialJobs: ClientJob[] }) {
       <div
         ref={scrollerRef}
         onScroll={handleColumnScroll}
-        className="flex min-h-0 flex-1 snap-x gap-4 overflow-x-auto scroll-px-4 px-4 pb-6 sm:scroll-px-6 sm:px-6"
+        className="flex min-h-0 flex-1 snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-6 sm:scroll-px-6 sm:px-6"
       >
         {STAGE_ORDER.map((stage) => (
           <Column

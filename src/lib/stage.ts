@@ -14,7 +14,6 @@ export const STAGE_CONFIG: Record<
   Stage,
   {
     label: string;
-    color: string;
     textClass: string;
     borderClass: string;
     bgClass: string;
@@ -24,7 +23,6 @@ export const STAGE_CONFIG: Record<
 > = {
   wishlist: {
     label: "wishlist",
-    color: "#B392F0",
     textClass: "text-wishlist",
     borderClass: "border-wishlist",
     bgClass: "bg-wishlist",
@@ -33,7 +31,6 @@ export const STAGE_CONFIG: Record<
   },
   applied: {
     label: "applied",
-    color: "#4EC9E0",
     textClass: "text-applied",
     borderClass: "border-applied",
     bgClass: "bg-applied",
@@ -42,7 +39,6 @@ export const STAGE_CONFIG: Record<
   },
   interview: {
     label: "interview",
-    color: "#E3B341",
     textClass: "text-interview",
     borderClass: "border-interview",
     bgClass: "bg-interview",
@@ -51,7 +47,6 @@ export const STAGE_CONFIG: Record<
   },
   offer: {
     label: "offer",
-    color: "#3FB950",
     textClass: "text-offer",
     borderClass: "border-offer",
     bgClass: "bg-offer",
@@ -60,7 +55,6 @@ export const STAGE_CONFIG: Record<
   },
   rejected: {
     label: "rejected",
-    color: "#F85149",
     textClass: "text-rejected",
     borderClass: "border-rejected",
     bgClass: "bg-rejected",
@@ -69,7 +63,6 @@ export const STAGE_CONFIG: Record<
   },
 };
 
-/** Cards sitting in "applied" this many days or longer are flagged as stale. */
 export const STALE_AFTER_DAYS = 14;
 
 export function isStale(job: { stage: Stage; appliedDate: string | null }): boolean {
@@ -78,14 +71,12 @@ export function isStale(job: { stage: Stage; appliedDate: string | null }): bool
   );
 }
 
-/** The stage a card moves to when the "forward" action is used, or null at the end of the line. */
 export function nextStage(stage: Stage): Stage | null {
   if (stage === "rejected" || stage === "offer") return null;
   const idx = STAGE_ORDER.indexOf(stage);
   return STAGE_ORDER[idx + 1] ?? null;
 }
 
-/** The stage a card moves to when the "back" action is used, or null if already at the start. */
 export function previousStage(stage: Stage): Stage | null {
   const idx = STAGE_ORDER.indexOf(stage);
   if (idx <= 0) return null;

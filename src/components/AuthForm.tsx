@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeRedirectPath } from "@/lib/redirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +34,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         setStatus("idle");
         return;
       }
-      const redirect = searchParams.get("redirect") || "/board";
-      router.push(redirect);
+      router.push(safeRedirectPath(searchParams.get("redirect")));
       router.refresh();
     } else {
       const { error, data } = await supabase.auth.signUp({ email, password });
@@ -66,7 +66,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h1 className="font-mono text-sm text-text-muted">
-        <span className="text-offer">$</span> {mode === "sign-in" ? "sign in" : "sign up"}
+        <span className="text-applied">$</span> {mode === "sign-in" ? "sign in" : "sign up"}
       </h1>
 
       <div className="flex flex-col gap-1.5">

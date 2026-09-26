@@ -2,7 +2,7 @@ import { STAGE_ORDER, STAGE_CONFIG } from "@/lib/stage";
 
 export default function BoardLoading() {
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-base">
+    <div className="flex h-dvh flex-col overflow-hidden bg-base">
       <div className="h-[52px] shrink-0 border-b border-hairline bg-panel" />
       <div className="h-[45px] shrink-0 border-b border-hairline bg-panel" />
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4 py-4 sm:px-6">

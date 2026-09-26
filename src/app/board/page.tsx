@@ -12,7 +12,7 @@ export default async function BoardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/sign-in");
+    redirect("/sign-in?redirect=/board");
   }
 
   const jobs = await listJobs(user.id);

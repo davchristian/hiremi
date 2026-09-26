@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/board"];
+const PROTECTED_PREFIXES = ["/board", "/feed"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -50,10 +50,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for static assets and the favicon,
-     * so the Supabase session cookie stays fresh on every navigation.
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

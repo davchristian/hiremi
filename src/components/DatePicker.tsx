@@ -5,21 +5,7 @@ import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-/** Parses "YYYY-MM-DD" as a local date (new Date(string) would shift it via UTC). */
-function parseISODate(value: string): Date | undefined {
-  const [y, m, d] = value.split("-").map(Number);
-  if (!y || !m || !d) return undefined;
-  return new Date(y, m - 1, d);
-}
-
-/** Formats a Date as local "YYYY-MM-DD". */
-function toISODate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+import { parseISODate, toISODate } from "@/lib/format";
 
 export function DatePicker({
   id,
@@ -28,7 +14,6 @@ export function DatePicker({
   placeholder = "pick a date",
 }: {
   id?: string;
-  /** "YYYY-MM-DD" or "" when unset. */
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -57,7 +42,6 @@ export function DatePicker({
           selected={selected}
           defaultMonth={selected}
           onSelect={(date) => {
-            // Re-clicking the selected day passes undefined, which clears the date.
             onChange(date ? toISODate(date) : "");
             setOpen(false);
           }}

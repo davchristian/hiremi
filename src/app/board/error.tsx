@@ -2,7 +2,7 @@
 
 export default function BoardError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-4 bg-base px-4 text-center">
+    <div className="flex h-dvh flex-col items-center justify-center gap-4 bg-base px-4 text-center">
       <p className="font-mono text-sm text-rejected">$ error: failed to load board</p>
       <p className="max-w-sm text-sm text-text-muted">
         Something went wrong reaching the database. Check your connection and try again.

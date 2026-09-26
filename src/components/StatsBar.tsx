@@ -2,11 +2,10 @@
 
 import { useMemo } from "react";
 import type { ClientJob } from "@/lib/types";
-import { startOfWeek } from "@/lib/format";
+import { startOfUtcWeek, weeksBetween } from "@/lib/format";
 
 const SPARK_WEEKS = 8;
 const SPARK_GLYPHS = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"] as const;
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function Stat({ label, value, colorClass }: { label: string; value: number; colorClass?: string }) {
   return (
@@ -17,14 +16,11 @@ function Stat({ label, value, colorClass }: { label: string; value: number; colo
   );
 }
 
-/** Applications per week for the last SPARK_WEEKS weeks, oldest first. */
-function weeklyCounts(jobs: ClientJob[]): number[] {
+function weeklyCounts(jobs: ClientJob[], currentWeek: number): number[] {
   const counts = new Array<number>(SPARK_WEEKS).fill(0);
-  const currentWeek = startOfWeek(new Date()).getTime();
   for (const job of jobs) {
     if (!job.appliedDate) continue;
-    const week = startOfWeek(new Date(job.appliedDate)).getTime();
-    const weeksBack = Math.round((currentWeek - week) / WEEK_MS);
+    const weeksBack = weeksBetween(startOfUtcWeek(new Date(job.appliedDate)), currentWeek);
     if (weeksBack >= 0 && weeksBack < SPARK_WEEKS) {
       counts[SPARK_WEEKS - 1 - weeksBack] += 1;
     }
@@ -33,17 +29,21 @@ function weeklyCounts(jobs: ClientJob[]): number[] {
 }
 
 export function StatsBar({ jobs }: { jobs: ClientJob[] }) {
-  const stats = useMemo(() => {
-    const weekStart = startOfWeek(new Date());
+  const { stats, weeks } = useMemo(() => {
+    const currentWeek = startOfUtcWeek(new Date());
     return {
-      total: jobs.length,
-      active: jobs.filter((j) => j.stage === "applied" || j.stage === "interview").length,
-      offers: jobs.filter((j) => j.stage === "offer").length,
-      thisWeek: jobs.filter((j) => j.appliedDate && new Date(j.appliedDate) >= weekStart).length,
+      stats: {
+        total: jobs.length,
+        active: jobs.filter((j) => j.stage === "applied" || j.stage === "interview").length,
+        offers: jobs.filter((j) => j.stage === "offer").length,
+        thisWeek: jobs.filter(
+          (j) => j.appliedDate !== null && new Date(j.appliedDate).getTime() >= currentWeek,
+        ).length,
+      },
+      weeks: weeklyCounts(jobs, currentWeek),
     };
   }, [jobs]);
 
-  const weeks = useMemo(() => weeklyCounts(jobs), [jobs]);
   const max = Math.max(...weeks, 1);
 
   return (

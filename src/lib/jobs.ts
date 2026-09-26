@@ -3,23 +3,33 @@ import { z } from "zod";
 import { db } from "@/db";
 import { jobs, stageEnum, type Job } from "@/db/schema";
 
+const calendarDate = z.iso.date().transform((value) => new Date(`${value}T00:00:00.000Z`));
+
+const rowId = z.guid();
+
 export const createJobSchema = z.object({
   company: z.string().trim().min(1).max(200),
   role: z.string().trim().min(1).max(200),
   stage: z.enum(stageEnum.enumValues).optional(),
-  appliedDate: z.coerce.date().optional().nullable(),
+  appliedDate: calendarDate.optional().nullable(),
   link: z.string().trim().url().max(2000).optional().or(z.literal("")).nullable(),
   notes: z.string().max(10_000).optional(),
+  listingId: z.string().uuid().optional().nullable(),
 });
 
 export const updateJobSchema = z.object({
   company: z.string().trim().min(1).max(200).optional(),
   role: z.string().trim().min(1).max(200).optional(),
   stage: z.enum(stageEnum.enumValues).optional(),
-  appliedDate: z.coerce.date().optional().nullable(),
+  appliedDate: calendarDate.optional().nullable(),
   link: z.string().trim().url().max(2000).optional().or(z.literal("")).nullable(),
   notes: z.string().max(10_000).optional(),
 });
+
+function utcToday(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
 
 export function listJobs(userId: string): Promise<Job[]> {
   return db.query.jobs.findMany({
@@ -33,7 +43,7 @@ export async function createJob(
   input: z.infer<typeof createJobSchema>,
 ): Promise<Job> {
   const stage = input.stage ?? "wishlist";
-  const appliedDate = input.appliedDate ?? (stage === "applied" ? new Date() : null);
+  const appliedDate = input.appliedDate ?? (stage === "applied" ? utcToday() : null);
 
   const [job] = await db
     .insert(jobs)
@@ -45,6 +55,7 @@ export async function createJob(
       appliedDate,
       link: input.link || null,
       notes: input.notes ?? "",
+      listingId: input.listingId ?? null,
     })
     .returning();
 
@@ -56,17 +67,18 @@ export async function updateJob(
   id: string,
   input: z.infer<typeof updateJobSchema>,
 ): Promise<Job | null> {
+  if (!rowId.safeParse(id).success) return null;
+
   const existing = await db.query.jobs.findFirst({
     where: and(eq(jobs.id, id), eq(jobs.userId, userId)),
   });
   if (!existing) return null;
 
-  // Auto-fill today's date the first time a job moves into "applied".
   const appliedDate =
     input.appliedDate !== undefined
       ? input.appliedDate
       : input.stage === "applied" && !existing.appliedDate
-        ? new Date()
+        ? utcToday()
         : undefined;
 
   const [job] = await db
@@ -83,10 +95,12 @@ export async function updateJob(
     .where(and(eq(jobs.id, id), eq(jobs.userId, userId)))
     .returning();
 
-  return job;
+  return job ?? null;
 }
 
 export async function deleteJob(userId: string, id: string): Promise<boolean> {
+  if (!rowId.safeParse(id).success) return false;
+
   const [deleted] = await db
     .delete(jobs)
     .where(and(eq(jobs.id, id), eq(jobs.userId, userId)))
