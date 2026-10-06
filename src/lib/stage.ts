@@ -1,4 +1,4 @@
-import { daysSince } from "@/lib/format";
+import { daysSince, todayISODate } from "@/lib/format";
 
 export const STAGE_ORDER = [
   "wishlist",
@@ -10,56 +10,31 @@ export const STAGE_ORDER = [
 
 export type Stage = (typeof STAGE_ORDER)[number];
 
-export const STAGE_CONFIG: Record<
-  Stage,
-  {
-    label: string;
-    textClass: string;
-    borderClass: string;
-    bgClass: string;
-    dotClass: string;
-    emptyHint: string;
-  }
-> = {
+export const STAGE_CONFIG: Record<Stage, { label: string; color: string; emptyHint: string }> = {
   wishlist: {
-    label: "wishlist",
-    textClass: "text-wishlist",
-    borderClass: "border-wishlist",
-    bgClass: "bg-wishlist",
-    dotClass: "bg-wishlist",
-    emptyHint: "nothing saved yet — add your first application",
+    label: "Wishlist",
+    color: "var(--color-wishlist)",
+    emptyHint: "Save roles you want to apply to. Add one here, or from Discover.",
   },
   applied: {
-    label: "applied",
-    textClass: "text-applied",
-    borderClass: "border-applied",
-    bgClass: "bg-applied",
-    dotClass: "bg-applied",
-    emptyHint: "move a card here once you apply",
+    label: "Applied",
+    color: "var(--color-applied)",
+    emptyHint: "Move an application here once you've sent it.",
   },
   interview: {
-    label: "interview",
-    textClass: "text-interview",
-    borderClass: "border-interview",
-    bgClass: "bg-interview",
-    dotClass: "bg-interview",
-    emptyHint: "interviews land here",
+    label: "Interview",
+    color: "var(--color-interview)",
+    emptyHint: "Applications with an interview scheduled land here.",
   },
   offer: {
-    label: "offer",
-    textClass: "text-offer",
-    borderClass: "border-offer",
-    bgClass: "bg-offer",
-    dotClass: "bg-offer",
-    emptyHint: "no offers yet",
+    label: "Offer",
+    color: "var(--color-offer)",
+    emptyHint: "No offers yet.",
   },
   rejected: {
-    label: "rejected",
-    textClass: "text-rejected",
-    borderClass: "border-rejected",
-    bgClass: "bg-rejected",
-    dotClass: "bg-rejected",
-    emptyHint: "none yet",
+    label: "Rejected",
+    color: "var(--color-rejected)",
+    emptyHint: "Nothing here.",
   },
 };
 
@@ -68,6 +43,18 @@ export const STALE_AFTER_DAYS = 14;
 export function isStale(job: { stage: Stage; appliedDate: string | null }): boolean {
   return (
     job.stage === "applied" && job.appliedDate !== null && daysSince(job.appliedDate) >= STALE_AFTER_DAYS
+  );
+}
+
+export function isFollowUpDue(
+  job: { stage: Stage; followUpDate: string | null },
+  today: string = todayISODate(),
+): boolean {
+  return (
+    job.followUpDate !== null &&
+    job.stage !== "offer" &&
+    job.stage !== "rejected" &&
+    job.followUpDate.slice(0, 10) <= today
   );
 }
 

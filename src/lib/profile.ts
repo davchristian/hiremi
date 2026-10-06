@@ -14,6 +14,7 @@ export const profileSchema = z.object({
   locationPreference: z.string().trim().max(200).default(""),
   workMode: z.enum(workModeEnum.enumValues).default("any"),
   blurb: z.string().trim().max(2000).default(""),
+  singaporePassConfirmed: z.boolean().default(false),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

@@ -1,4 +1,4 @@
-const DEFAULT_PATH = "/board";
+const DEFAULT_PATH = "/feed";
 const BASE = "http://localhost";
 
 export function safeRedirectPath(value: string | null | undefined): string {

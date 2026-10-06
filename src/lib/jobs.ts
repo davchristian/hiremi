@@ -7,11 +7,16 @@ const calendarDate = z.iso.date().transform((value) => new Date(`${value}T00:00:
 
 const rowId = z.guid();
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const FOLLOW_UP_AFTER_DAYS = 7;
+
 export const createJobSchema = z.object({
   company: z.string().trim().min(1).max(200),
   role: z.string().trim().min(1).max(200),
   stage: z.enum(stageEnum.enumValues).optional(),
   appliedDate: calendarDate.optional().nullable(),
+  followUpDate: calendarDate.optional().nullable(),
   link: z.string().trim().url().max(2000).optional().or(z.literal("")).nullable(),
   notes: z.string().max(10_000).optional(),
   listingId: z.string().uuid().optional().nullable(),
@@ -22,6 +27,7 @@ export const updateJobSchema = z.object({
   role: z.string().trim().min(1).max(200).optional(),
   stage: z.enum(stageEnum.enumValues).optional(),
   appliedDate: calendarDate.optional().nullable(),
+  followUpDate: calendarDate.optional().nullable(),
   link: z.string().trim().url().max(2000).optional().or(z.literal("")).nullable(),
   notes: z.string().max(10_000).optional(),
 });
@@ -29,6 +35,10 @@ export const updateJobSchema = z.object({
 function utcToday(): Date {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+export function followUpAfterApplying(appliedDate: Date): Date {
+  return new Date(appliedDate.getTime() + FOLLOW_UP_AFTER_DAYS * DAY_MS);
 }
 
 export function listJobs(userId: string): Promise<Job[]> {
@@ -44,6 +54,12 @@ export async function createJob(
 ): Promise<Job> {
   const stage = input.stage ?? "wishlist";
   const appliedDate = input.appliedDate ?? (stage === "applied" ? utcToday() : null);
+  const followUpDate =
+    input.followUpDate !== undefined
+      ? input.followUpDate
+      : stage === "applied" && appliedDate
+        ? followUpAfterApplying(appliedDate)
+        : null;
 
   const [job] = await db
     .insert(jobs)
@@ -53,6 +69,7 @@ export async function createJob(
       role: input.role,
       stage,
       appliedDate,
+      followUpDate,
       link: input.link || null,
       notes: input.notes ?? "",
       listingId: input.listingId ?? null,
@@ -81,6 +98,13 @@ export async function updateJob(
         ? utcToday()
         : undefined;
 
+  const followUpDate =
+    input.followUpDate !== undefined
+      ? input.followUpDate
+      : input.stage === "applied" && existing.stage !== "applied" && !existing.followUpDate
+        ? followUpAfterApplying(appliedDate ?? existing.appliedDate ?? utcToday())
+        : undefined;
+
   const [job] = await db
     .update(jobs)
     .set({
@@ -88,6 +112,7 @@ export async function updateJob(
       ...(input.role !== undefined && { role: input.role }),
       ...(input.stage !== undefined && { stage: input.stage }),
       ...(appliedDate !== undefined && { appliedDate }),
+      ...(followUpDate !== undefined && { followUpDate }),
       ...(input.link !== undefined && { link: input.link || null }),
       ...(input.notes !== undefined && { notes: input.notes }),
       updatedAt: new Date(),

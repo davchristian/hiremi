@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { matchListings } from "@/lib/feed";
+import { matchListings, parseFeedLimit, parseFeedSort } from "@/lib/feed";
 import { getProfile } from "@/lib/profile";
 
 export async function GET(request: Request) {
@@ -16,11 +16,13 @@ export async function GET(request: Request) {
   const profile = await getProfile(user.id);
 
   const matches = await matchListings(user.id, profile, {
-    limit: Math.min(Number(params.get("limit")) || 40, 100),
+    limit: parseFeedLimit(params.get("limit")),
     query: params.get("q") ?? undefined,
     remoteOnly: params.get("remote") === "1",
     hideTracked: params.get("hideTracked") === "1",
     indonesiaOnly: params.get("indonesia") === "1",
+    includeExcluded: params.get("excluded") === "1",
+    sort: parseFeedSort(params.get("sort")),
   });
 
   return NextResponse.json({

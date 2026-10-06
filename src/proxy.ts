@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/board", "/feed"];
+const PROTECTED_SECTIONS = ["/board", "/feed", "/sources", "/profile"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -31,8 +31,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    request.nextUrl.pathname.startsWith(prefix),
+  const { pathname } = request.nextUrl;
+  const isProtected = PROTECTED_SECTIONS.some(
+    (section) => pathname === section || pathname.startsWith(`${section}/`),
   );
 
   if (isProtected && !user) {
@@ -42,7 +43,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if ((request.nextUrl.pathname === "/sign-in" || request.nextUrl.pathname === "/sign-up") && user) {
-    return NextResponse.redirect(new URL("/board", request.url));
+    return NextResponse.redirect(new URL("/feed", request.url));
   }
 
   return response;

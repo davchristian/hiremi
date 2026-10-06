@@ -1,7 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { reserveManualIngest, runIngest } from "@/lib/ingest";
+import { reserveManualIngest } from "@/lib/ingest";
+import { runRefreshTick } from "@/lib/refresh";
 
 export const maxDuration = 60;
 
@@ -16,7 +17,8 @@ function hasCronSecret(request: Request): boolean {
 }
 
 async function handler(request: Request) {
-  if (!hasCronSecret(request)) {
+  const scheduled = hasCronSecret(request);
+  if (!scheduled) {
     const supabase = await createClient();
     const {
       data: { user },
@@ -30,7 +32,7 @@ async function handler(request: Request) {
       const minutes = Math.ceil(reservation.retryAfter / 60);
       return NextResponse.json(
         {
-          error: `refreshed recently — try again in ${minutes}m`,
+          error: `Refreshed recently. Try again in ${minutes} min.`,
           retryAfter: reservation.retryAfter,
         },
         { status: 429, headers: { "Retry-After": String(reservation.retryAfter) } },
@@ -39,9 +41,9 @@ async function handler(request: Request) {
   }
 
   try {
-    return NextResponse.json(await runIngest());
+    return NextResponse.json(await runRefreshTick({ manual: !scheduled }));
   } catch (error) {
-    const message = error instanceof Error ? error.message : "ingest failed";
+    const message = error instanceof Error ? error.message : "Refresh failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

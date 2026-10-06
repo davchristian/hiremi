@@ -22,6 +22,13 @@ export function todayISODate(): string {
   return toISODate(new Date());
 }
 
+export function addDaysISODate(isoDate: string, days: number): string {
+  const date = parseISODate(isoDate);
+  if (!date) return isoDate;
+  date.setDate(date.getDate() + days);
+  return toISODate(date);
+}
+
 export function isoDateToTimestamp(isoDate: string): string {
   return `${isoDate.slice(0, 10)}T00:00:00.000Z`;
 }
