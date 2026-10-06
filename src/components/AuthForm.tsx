@@ -70,7 +70,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-5" noValidate={false}>
       <div className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-title text-text">{signingIn ? "Sign in to Job Tracker" : "Create your account"}</h1>
+        <h1 className="text-title text-text">{signingIn ? "Sign in to Hiremi" : "Create your account"}</h1>
         <p className="text-callout text-text-muted">
           {signingIn ? "Find internships you can take, and track every application." : "It takes a few seconds."}
         </p>

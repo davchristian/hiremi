@@ -225,7 +225,7 @@ export function parseDate(value: string | number | null | undefined): Date | nul
 }
 
 export const USER_AGENT =
-  "job-tracker/1.0 (personal internship tracker; reads public job board APIs on a 3-day cycle)";
+  "hiremi/1.0 (personal internship tracker; reads public job board APIs on a 3-day cycle)";
 const TIMEOUT_MS = 15_000;
 
 export async function fetchFeed(url: string, accept = "application/json"): Promise<Response> {

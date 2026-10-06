@@ -43,7 +43,7 @@ export function AppShell({ email, children, activePath }: { email: string; child
           <aside className="material-chrome fixed inset-y-0 left-0 z-40 hidden w-[220px] flex-col border-r border-separator desk:flex">
             <div className="flex h-14 items-center gap-2.5 px-4">
               <AppIcon size={26} />
-              <span className="text-headline text-[15px] text-text">Job Tracker</span>
+              <span className="text-headline text-[15px] text-text">Hiremi</span>
             </div>
             <nav aria-label="Sections" className="flex flex-1 flex-col gap-0.5 px-2.5 pt-2">
               {NAV.map(({ href, label, icon: Icon }) => {

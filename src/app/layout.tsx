@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Job Tracker", template: "%s · Job Tracker" },
+  title: { default: "Hiremi", template: "%s · Hiremi" },
   description: "Find software internships you can actually take, and track every application.",
 };
 

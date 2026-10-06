@@ -1,4 +1,6 @@
-# Job Tracker
+# Hiremi
+
+Internships you can actually take, and every application in one place.
 
 A personal kanban that follows each job application from wishlist to offer, plus a feed that ranks new openings against your profile. Built for students and early-career engineers job-hunting in Indonesia and Southeast Asia.
 

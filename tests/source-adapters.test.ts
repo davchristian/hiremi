@@ -276,7 +276,7 @@ test("every request identifies itself with a descriptive User-Agent", async (t) 
   await fetchSource(ref("lever", "nium"));
   const init = fetchMock.mock.calls[0].arguments[1] as RequestInit;
   assert.equal((init.headers as Record<string, string>)["User-Agent"], USER_AGENT);
-  assert.match(USER_AGENT, /job-tracker/);
+  assert.match(USER_AGENT, /hiremi/);
 });
 
 test("a board that answers with an error status throws, so ingest can record it", async (t) => {
