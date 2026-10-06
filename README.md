@@ -53,4 +53,4 @@ An hourly cron calls `/api/ingest`, which works through a 3-day refresh cycle a 
 
 ## Deploying
 
-Deploy to Vercel, set the environment variables, and keep `vercel.json`'s function region (`bom1`, Mumbai) next to the Supabase project's region. Free Supabase projects pause after about a week idle; resume them from the dashboard.
+Deploy to Vercel, set the environment variables, and keep `vercel.json`'s function region (`sin1`, Singapore) next to the Supabase project's region. Free Supabase projects pause after about a week idle; resume them from the dashboard.
