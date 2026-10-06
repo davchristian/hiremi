@@ -53,6 +53,10 @@ async function startCycle(trigger: "schedule" | "manual"): Promise<RefreshCycle>
   return cycle;
 }
 
+function timestamp(date: Date) {
+  return sql`${date.toISOString()}::timestamp`;
+}
+
 function lastFetched() {
   return sql<Date>`min(coalesce(${jobSources.lastFetchedAt}, 'epoch'::timestamp))`;
 }
@@ -63,7 +67,7 @@ async function pendingSources(cycleStart: Date, limit: number): Promise<SourceRe
     .from(jobSources)
     .where(eq(jobSources.enabled, true))
     .groupBy(jobSources.kind, jobSources.slug)
-    .having(lt(lastFetched(), cycleStart))
+    .having(lt(lastFetched(), timestamp(cycleStart)))
     .orderBy(lastFetched())
     .limit(limit);
   return rows.map((row) => ({ kind: row.kind, slug: row.slug, label: row.label ?? "" }));
@@ -75,7 +79,7 @@ export async function countPendingSources(cycleStart: Date): Promise<number> {
     .from(jobSources)
     .where(eq(jobSources.enabled, true))
     .groupBy(jobSources.kind, jobSources.slug)
-    .having(lt(lastFetched(), cycleStart));
+    .having(lt(lastFetched(), timestamp(cycleStart)));
   return rows.length;
 }
 
@@ -95,6 +99,7 @@ async function closeStaleAggregatorListings(previousCycleStart: Date | null): Pr
 
 export async function summarizeCycle(cycle: RefreshCycle): Promise<RefreshSummary> {
   const since = cycle.startedAt;
+  const sinceSql = timestamp(since);
 
   const [sources] = await db
     .select({
@@ -106,9 +111,9 @@ export async function summarizeCycle(cycle: RefreshCycle): Promise<RefreshSummar
 
   const [counts] = await db
     .select({
-      created: sql<number>`count(*) filter (where ${jobListings.createdAt} >= ${since})::int`,
-      changed: sql<number>`count(*) filter (where ${jobListings.changedAt} >= ${since} and ${jobListings.createdAt} < ${since})::int`,
-      closed: sql<number>`count(*) filter (where ${jobListings.closedAt} >= ${since})::int`,
+      created: sql<number>`count(*) filter (where ${jobListings.createdAt} >= ${sinceSql})::int`,
+      changed: sql<number>`count(*) filter (where ${jobListings.changedAt} >= ${sinceSql} and ${jobListings.createdAt} < ${sinceSql})::int`,
+      closed: sql<number>`count(*) filter (where ${jobListings.closedAt} >= ${sinceSql})::int`,
     })
     .from(jobListings);
 
