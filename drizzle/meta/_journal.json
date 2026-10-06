@@ -15,6 +15,62 @@
       "when": 1783941202816,
       "tag": "0001_rls_and_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785336488945,
+      "tag": "0002_job_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785336488946,
+      "tag": "0003_feed_rls_and_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785336488947,
+      "tag": "0004_kalibrr_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790365502610,
+      "tag": "0005_ingest_cooldowns",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790365504447,
+      "tag": "0006_ingest_cooldowns_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790975396104,
+      "tag": "0007_listing_freshness_and_follow_ups",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791222252763,
+      "tag": "0008_internship_discovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791222264224,
+      "tag": "0009_discovery_rls_and_defaults",
+      "breakpoints": true
     }
   ]
 }

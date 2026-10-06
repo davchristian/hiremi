@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createJob, createJobSchema, listJobs } from "@/lib/jobs";
+import { toClientJob } from "@/lib/types";
 
 export async function GET() {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function GET() {
   }
 
   const jobs = await listJobs(user.id);
-  return NextResponse.json({ jobs });
+  return NextResponse.json({ jobs: jobs.map(toClientJob) });
 }
 
 export async function POST(request: Request) {
@@ -31,5 +32,5 @@ export async function POST(request: Request) {
   }
 
   const job = await createJob(user.id, parsed.data);
-  return NextResponse.json({ job }, { status: 201 });
+  return NextResponse.json({ job: toClientJob(job) }, { status: 201 });
 }

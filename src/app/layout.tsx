@@ -1,20 +1,14 @@
-import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "job-tracker",
-  description: "A git-log styled kanban board for tracking job applications.",
+  title: { default: "Hiremi", template: "%s · Hiremi" },
+  description: "Find software internships you can actually take, and track every application.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#12100e",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -23,11 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-base text-text">{children}</body>
+    <html lang="en" className="dark h-full">
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

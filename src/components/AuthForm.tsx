@@ -4,6 +4,11 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeRedirectPath } from "@/lib/redirect";
+import { Button } from "@/components/hig/button";
+import { Field, TextField } from "@/components/hig/fields";
+import { Notice } from "@/components/hig/layout";
+import { ActivityIndicator } from "@/components/hig/status";
 
 type Mode = "sign-in" | "sign-up";
 
@@ -30,8 +35,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         setStatus("idle");
         return;
       }
-      const redirect = searchParams.get("redirect") || "/board";
-      router.push(redirect);
+      router.push(safeRedirectPath(searchParams.get("redirect")));
       router.refresh();
     } else {
       const { error, data } = await supabase.auth.signUp({ email, password });
@@ -41,7 +45,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         return;
       }
       if (data.session) {
-        router.push("/board");
+        router.push("/feed");
         router.refresh();
       } else {
         setConfirmSent(true);
@@ -52,81 +56,66 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
   if (confirmSent) {
     return (
-      <div className="font-mono text-sm">
-        <p className="text-text">
-          <span className="text-offer">✓</span> check {email} to confirm your account.
+      <div className="flex flex-col items-center gap-2 text-center">
+        <h1 className="text-title text-text">Check your email</h1>
+        <p className="text-callout text-text-muted">
+          We sent a confirmation link to {email}. Open it to finish creating your account.
         </p>
       </div>
     );
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h1 className="font-mono text-sm text-text-muted">
-        <span className="text-offer">$</span> {mode === "sign-in" ? "sign in" : "sign up"}
-      </h1>
+  const signingIn = mode === "sign-in";
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="font-mono text-xs text-text-muted">
-          email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded border border-hairline bg-panel-alt px-3 py-2 font-mono text-sm text-text outline-none focus:border-applied focus:ring-1 focus:ring-applied"
-        />
+  return (
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-5" noValidate={false}>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <h1 className="text-title text-text">{signingIn ? "Sign in to Hiremi" : "Create your account"}</h1>
+        <p className="text-callout text-text-muted">
+          {signingIn ? "Find internships you can take, and track every application." : "It takes a few seconds."}
+        </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="font-mono text-xs text-text-muted">
-          password
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          minLength={6}
-          autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded border border-hairline bg-panel-alt px-3 py-2 font-mono text-sm text-text outline-none focus:border-applied focus:ring-1 focus:ring-applied"
-        />
+      <div className="flex flex-col gap-3">
+        <Field label="Email" htmlFor="email">
+          <TextField
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+          />
+        </Field>
+        <Field label="Password" htmlFor="password" helper={signingIn ? undefined : "At least 6 characters."}>
+          <TextField
+            id="password"
+            type="password"
+            required
+            minLength={6}
+            autoComplete={signingIn ? "current-password" : "new-password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </Field>
       </div>
 
       {error && (
-        <p className="rounded border border-rejected/40 bg-rejected/10 px-3 py-2 font-mono text-xs text-rejected">
+        <Notice tone="error" title={signingIn ? "Couldn't sign in" : "Couldn't create your account"}>
           {error}
-        </p>
+        </Notice>
       )}
 
-      <button
-        type="submit"
-        disabled={status === "loading"}
-        className="mt-1 rounded bg-applied px-3 py-2 font-mono text-sm font-medium text-base transition-colors hover:bg-applied/90 disabled:opacity-60"
-      >
-        {status === "loading" ? "working..." : mode === "sign-in" ? "sign in" : "create account"}
-      </button>
+      <Button variant="accent" size="lg" type="submit" disabled={status === "loading"} icon={status === "loading" ? <ActivityIndicator size={15} /> : undefined}>
+        {status === "loading" ? (signingIn ? "Signing in" : "Creating account") : signingIn ? "Sign in" : "Create account"}
+      </Button>
 
-      <p className="text-center font-mono text-xs text-text-muted">
-        {mode === "sign-in" ? (
-          <>
-            no account?{" "}
-            <Link href="/sign-up" className="text-applied hover:underline">
-              sign up
-            </Link>
-          </>
-        ) : (
-          <>
-            have an account?{" "}
-            <Link href="/sign-in" className="text-applied hover:underline">
-              sign in
-            </Link>
-          </>
-        )}
+      <p className="text-center text-callout text-text-muted">
+        {signingIn ? "New here? " : "Already have an account? "}
+        <Link href={signingIn ? "/sign-up" : "/sign-in"} className="font-medium text-tint hover:underline">
+          {signingIn ? "Create an account" : "Sign in"}
+        </Link>
       </p>
     </form>
   );

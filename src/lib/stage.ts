@@ -1,3 +1,5 @@
+import { daysSince, todayISODate } from "@/lib/format";
+
 export const STAGE_ORDER = [
   "wishlist",
   "applied",
@@ -8,60 +10,60 @@ export const STAGE_ORDER = [
 
 export type Stage = (typeof STAGE_ORDER)[number];
 
-export const STAGE_CONFIG: Record<
-  Stage,
-  { label: string; color: string; textClass: string; borderClass: string; bgClass: string; dotClass: string }
-> = {
+export const STAGE_CONFIG: Record<Stage, { label: string; color: string; emptyHint: string }> = {
   wishlist: {
-    label: "wishlist",
-    color: "#B392F0",
-    textClass: "text-wishlist",
-    borderClass: "border-wishlist",
-    bgClass: "bg-wishlist",
-    dotClass: "bg-wishlist",
+    label: "Wishlist",
+    color: "var(--color-wishlist)",
+    emptyHint: "Save roles you want to apply to. Add one here, or from Discover.",
   },
   applied: {
-    label: "applied",
-    color: "#4EC9E0",
-    textClass: "text-applied",
-    borderClass: "border-applied",
-    bgClass: "bg-applied",
-    dotClass: "bg-applied",
+    label: "Applied",
+    color: "var(--color-applied)",
+    emptyHint: "Move an application here once you've sent it.",
   },
   interview: {
-    label: "interview",
-    color: "#E3B341",
-    textClass: "text-interview",
-    borderClass: "border-interview",
-    bgClass: "bg-interview",
-    dotClass: "bg-interview",
+    label: "Interview",
+    color: "var(--color-interview)",
+    emptyHint: "Applications with an interview scheduled land here.",
   },
   offer: {
-    label: "offer",
-    color: "#3FB950",
-    textClass: "text-offer",
-    borderClass: "border-offer",
-    bgClass: "bg-offer",
-    dotClass: "bg-offer",
+    label: "Offer",
+    color: "var(--color-offer)",
+    emptyHint: "No offers yet.",
   },
   rejected: {
-    label: "rejected",
-    color: "#F85149",
-    textClass: "text-rejected",
-    borderClass: "border-rejected",
-    bgClass: "bg-rejected",
-    dotClass: "bg-rejected",
+    label: "Rejected",
+    color: "var(--color-rejected)",
+    emptyHint: "Nothing here.",
   },
 };
 
-/** The stage a card moves to when the "forward" action is used, or null at the end of the line. */
+export const STALE_AFTER_DAYS = 14;
+
+export function isStale(job: { stage: Stage; appliedDate: string | null }): boolean {
+  return (
+    job.stage === "applied" && job.appliedDate !== null && daysSince(job.appliedDate) >= STALE_AFTER_DAYS
+  );
+}
+
+export function isFollowUpDue(
+  job: { stage: Stage; followUpDate: string | null },
+  today: string = todayISODate(),
+): boolean {
+  return (
+    job.followUpDate !== null &&
+    job.stage !== "offer" &&
+    job.stage !== "rejected" &&
+    job.followUpDate.slice(0, 10) <= today
+  );
+}
+
 export function nextStage(stage: Stage): Stage | null {
   if (stage === "rejected" || stage === "offer") return null;
   const idx = STAGE_ORDER.indexOf(stage);
   return STAGE_ORDER[idx + 1] ?? null;
 }
 
-/** The stage a card moves to when the "back" action is used, or null if already at the start. */
 export function previousStage(stage: Stage): Stage | null {
   const idx = STAGE_ORDER.indexOf(stage);
   if (idx <= 0) return null;
