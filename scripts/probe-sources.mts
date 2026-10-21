@@ -18,6 +18,9 @@ const sources: SourceRef[] = [
   { kind: "catapa", slug: "gdplabs", label: "GDP Labs" },
   { kind: "themuse", slug: "Software Engineering", label: "The Muse" },
   { kind: "himalayas", slug: "Indonesia", label: "Himalayas" },
+  { kind: "ycombinator", slug: "internships", label: "YC" },
+  { kind: "linkedin", slug: "Indonesia", label: "LinkedIn" },
+  { kind: "linkedin", slug: "Singapore", label: "LinkedIn" },
 ];
 
 const only = process.argv[2];

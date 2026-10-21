@@ -2,6 +2,7 @@ import { test, type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { adapterFor, fetchSource, USER_AGENT, type SourceRef } from "@/lib/sources";
 import { parseBoardInput } from "@/lib/source-meta";
+import { parseSearchCards } from "@/lib/sources/linkedin";
 
 function serve(t: TestContext, routes: Record<string, unknown>) {
   return t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) => {
@@ -269,6 +270,177 @@ test("himalayas lists remote internships open to a country and links to Himalaya
   assert.deepEqual(listings[0].remoteCountries, ["Indonesia", "Vietnam"]);
   assert.equal(listings[1].location, "Remote (Worldwide)");
   assert.match(listings[0].url, /^https:\/\/himalayas\.app\//);
+});
+
+function inertiaPage(component: string, props: unknown): string {
+  const json = JSON.stringify({ component, props }).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  return `<!DOCTYPE html><html><body><div id="app" data-page="${json}"></div></body></html>`;
+}
+
+test("ycombinator reads the internships page and hydrates each job from its own page", async (t) => {
+  const job = {
+    id: 82011,
+    title: "Software Engineering Intern",
+    url: "/companies/browser-use/jobs/JwGWpEP-software-engineering-intern",
+    location: "San Francisco, CA, US / Remote (US)",
+    type: "Internship",
+    prettyRole: "Engineering",
+    roleSpecificType: "Full stack",
+    companyName: "Browser Use",
+  };
+  const fetchMock = serve(t, {
+    "https://www.ycombinator.com/internships": inertiaPage("InternshipsPage", {
+      jobPostings: [job, { id: 2, title: "", url: "/companies/x/jobs/untitled" }],
+    }),
+    "https://www.ycombinator.com/companies/browser-use/jobs/": inertiaPage("WaasShowJobPage", {
+      job: { ...job, description: "### About\n\nBuild agents & \"tools\".\n\n\n\n- TypeScript" },
+    }),
+  });
+
+  const source = ref("ycombinator", "");
+  const [summary, ...rest] = await fetchSource(source);
+  assert.equal(rest.length, 0);
+  assert.equal(String(fetchMock.mock.calls[0].arguments[0]), "https://www.ycombinator.com/internships");
+  assert.equal(summary.externalId, "82011");
+  assert.equal(summary.board, "internships");
+  assert.equal(summary.company, "Browser Use");
+  assert.equal(summary.employmentType, "Internship");
+  assert.equal(summary.department, "Engineering, Full stack");
+  assert.equal(summary.location, "San Francisco, CA, US; Remote (US)");
+  assert.equal(summary.workplace, "unknown");
+  assert.equal(summary.url, "https://www.ycombinator.com/companies/browser-use/jobs/JwGWpEP-software-engineering-intern");
+  assert.equal(summary.needsHydration, true);
+
+  const full = await adapterFor("ycombinator").hydrate!(source, summary);
+  assert.equal(full.description, "### About\n\nBuild agents & \"tools\".\n\n- TypeScript");
+  assert.equal(full.needsHydration, false);
+  assert.equal(full.url, summary.url);
+});
+
+test("ycombinator accepts a pasted job list URL as the page to read", async (t) => {
+  const fetchMock = serve(t, {
+    "https://www.ycombinator.com/jobs/role/software-engineer/singapore": inertiaPage("WaasJobListingsPage", { jobPostings: [] }),
+  });
+  const name = await adapterFor("ycombinator").resolveName("https://www.ycombinator.com/jobs/role/Software-Engineer/singapore?x=1");
+  assert.equal(name, "YC: software-engineer/singapore");
+  assert.equal(fetchMock.mock.callCount(), 1);
+  await assert.rejects(adapterFor("ycombinator").resolveName("companies/glimpse-2"));
+});
+
+function linkedinCard(id: string, title: string, company: string, place: string): string {
+  return `<li>
+    <div class="base-card base-search-card job-search-card" data-entity-urn="urn:li:jobPosting:${id}">
+      <a class="base-card__full-link absolute" href="https://id.linkedin.com/jobs/view/${id}?position=1&amp;refId=abc">
+        <span class="sr-only">${title}</span>
+      </a>
+      <div class="base-search-card__info">
+        <h3 class="base-search-card__title">
+          ${title}
+        </h3>
+        <h4 class="base-search-card__subtitle">
+          <a class="hidden-nested-link" href="https://id.linkedin.com/company/x">${company}</a>
+        </h4>
+        <div class="base-search-card__metadata">
+          <span class="job-search-card__location">
+            ${place}
+          </span>
+          <time class="job-search-card__listdate" datetime="2026-10-14">1 week ago</time>
+        </div>
+      </div>
+    </div>
+  </li>`;
+}
+
+test("linkedin pages through guest search results for internships in a location", async (t) => {
+  const fetchMock = t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) => {
+    const start = Number(new URL(String(input)).searchParams.get("start"));
+    if (start > 0) return new Response("");
+    return new Response(
+      `<!DOCTYPE html>${linkedinCard("4478416060", "Software Engineer Intern", "PT Yonyou &amp; Co", "West Jakarta, Jakarta, Indonesia")}${linkedinCard("4441444761", "Backend Developer", "Tokopedia", "Remote")}<li><div>promo</div></li>`,
+    );
+  });
+
+  const listings = await fetchSource(ref("linkedin", " "));
+  assert.equal(fetchMock.mock.callCount(), 2);
+  const first = new URL(String(fetchMock.mock.calls[0].arguments[0]));
+  assert.equal(first.origin + first.pathname, "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search");
+  assert.equal(first.searchParams.get("location"), "Indonesia");
+  assert.equal(first.searchParams.get("f_JT"), "I");
+  assert.equal(new URL(String(fetchMock.mock.calls[1].arguments[0])).searchParams.get("start"), "2");
+
+  assert.equal(listings.length, 2);
+  assert.equal(listings[0].externalId, "4478416060");
+  assert.equal(listings[0].board, "Indonesia");
+  assert.equal(listings[0].title, "Software Engineer Intern");
+  assert.equal(listings[0].company, "PT Yonyou & Co");
+  assert.equal(listings[0].location, "West Jakarta, Jakarta, Indonesia");
+  assert.equal(listings[0].employmentType, "");
+  assert.equal(first.searchParams.get("keywords"), "software engineer intern");
+  assert.equal(listings[0].url, "https://id.linkedin.com/jobs/view/4478416060");
+  assert.equal(listings[0].postedAt?.toISOString(), "2026-10-14T00:00:00.000Z");
+  assert.equal(listings[0].needsHydration, true);
+  assert.equal(listings[1].workplace, "remote");
+});
+
+test("linkedin hydrates the description and criteria from the guest job page", async (t) => {
+  serve(t, {
+    "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/4478416060": `
+      <section class="show-more-less-html" data-max-lines="5">
+        <div class="show-more-less-html__markup show-more-less-html__markup--clamp-after-5
+            relative overflow-hidden">
+          <p>Build testable code.</p><p><strong>Requirements</strong></p><ul><li>Go</li></ul>
+        </div>
+        <button class="show-more-less-html__button">Show more</button>
+      </section>
+      <ul class="description__job-criteria-list">
+        <li class="description__job-criteria-item">
+          <h3 class="description__job-criteria-subheader">
+            Seniority level
+          </h3>
+          <span class="description__job-criteria-text description__job-criteria-text--criteria">
+            Internship
+          </span>
+        </li>
+        <li class="description__job-criteria-item">
+          <h3 class="description__job-criteria-subheader">
+            Employment type
+          </h3>
+          <span class="description__job-criteria-text description__job-criteria-text--criteria">
+              Internship
+          </span>
+        </li>
+        <li class="description__job-criteria-item">
+          <h3 class="description__job-criteria-subheader">
+            Job function
+          </h3>
+          <span class="description__job-criteria-text description__job-criteria-text--criteria">
+            Engineering and Information Technology
+          </span>
+        </li>
+      </ul>`,
+  });
+
+  const source = ref("linkedin", "Indonesia");
+  const [summary] = parseSearchCards(linkedinCard("4478416060", "Software Engineer Intern", "PT Yonyou", "Jakarta, Indonesia"), "Indonesia");
+  const full = await adapterFor("linkedin").hydrate!(source, summary);
+  assert.equal(full.description, "Build testable code.\n\n**Requirements**\n\n- Go");
+  assert.equal(full.employmentType, "Internship");
+  assert.equal(full.department, "Engineering and Information Technology");
+  assert.equal(full.needsHydration, false);
+  assert.equal(full.title, "Software Engineer Intern");
+});
+
+test("linkedin keeps the search card when rate limited and backs off further requests", async (t) => {
+  const fetchMock = t.mock.method(globalThis, "fetch", async () => new Response("", { status: 429 }));
+  const [summary] = parseSearchCards(linkedinCard("4441444761", "Backend Developer Intern", "Tokopedia", "Jakarta, Indonesia"), "Indonesia");
+
+  const kept = await adapterFor("linkedin").hydrate!(ref("linkedin", "Indonesia"), summary);
+  assert.equal(kept.description, "");
+  assert.equal(kept.title, "Backend Developer Intern");
+  assert.equal(kept.needsHydration, false);
+
+  await assert.rejects(fetchSource(ref("linkedin", "Singapore")), /rate limiting/);
+  assert.equal(fetchMock.mock.callCount(), 1);
 });
 
 test("every request identifies itself with a descriptive User-Agent", async (t) => {

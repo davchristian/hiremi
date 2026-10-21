@@ -26,7 +26,7 @@ try {
   report(url.includes(":6543/"), "DATABASE_URL uses the transaction pooler (port 6543)", host);
 
   const migrations = await sql`select count(*)::int as count from drizzle.__drizzle_migrations`.catch(() => [{ count: 0 }]);
-  report(migrations[0].count === 10, "migrations applied", `${migrations[0].count} of 10`);
+  report(migrations[0].count === 11, "migrations applied", `${migrations[0].count} of 11`);
 
   const tables = await sql`select tablename, rowsecurity from pg_tables where schemaname = 'public'`;
   for (const name of EXPECTED_TABLES) {
@@ -39,10 +39,10 @@ try {
   report(extensions.length === 1, "pgvector extension");
 
   const enums = await sql`select enumlabel from pg_enum e join pg_type t on t.oid = e.enumtypid where t.typname = 'job_source_kind' order by e.enumsortorder`;
-  report(enums.length === 9 && !enums.some((row) => row.enumlabel === "kalibrr"), "job source kinds", enums.map((row) => row.enumlabel).join(", "));
+  report(enums.length === 11 && !enums.some((row) => row.enumlabel === "kalibrr"), "job source kinds", enums.map((row) => row.enumlabel).join(", "));
 
   const defaults = await sql`select count(*)::int as count from job_sources where user_id is null`.catch(() => [{ count: -1 }]);
-  report(defaults[0].count === 13, "default job boards seeded", String(defaults[0].count));
+  report(defaults[0].count === 16, "default job boards seeded", String(defaults[0].count));
 
   const fk = await sql`select count(*)::int as count from pg_constraint where conname like '%auth_users_id_fk'`;
   report(fk[0].count >= 4, "user foreign keys to auth.users", String(fk[0].count));

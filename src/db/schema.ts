@@ -79,6 +79,8 @@ export const jobSourceKindEnum = pgEnum("job_source_kind", [
   "catapa",
   "themuse",
   "himalayas",
+  "ycombinator",
+  "linkedin",
   "web",
 ]);
 

@@ -6,6 +6,8 @@ import { workable } from "./workable";
 import { catapa } from "./catapa";
 import { themuse } from "./themuse";
 import { himalayas } from "./himalayas";
+import { ycombinator } from "./ycombinator";
+import { linkedin } from "./linkedin";
 import type { JobSourceKind, NormalizedListing, SourceAdapter, SourceRef } from "./types";
 
 export * from "./types";
@@ -19,6 +21,8 @@ const ADAPTERS: Partial<Record<JobSourceKind, SourceAdapter>> = {
   catapa,
   themuse,
   himalayas,
+  ycombinator,
+  linkedin,
 };
 
 export function adapterFor(kind: JobSourceKind): SourceAdapter {
