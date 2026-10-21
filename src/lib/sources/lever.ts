@@ -51,8 +51,6 @@ function postingsUrl(company: string): string {
 }
 
 export const lever: SourceAdapter = {
-  complete: true,
-
   async list(source) {
     const res = await fetchFeed(postingsUrl(source.slug));
     const postings = (await res.json()) as LeverPosting[];

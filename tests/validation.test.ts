@@ -97,6 +97,13 @@ test("aggregators take an optional filter and fall back to a default", () => {
   assert.equal(normalizeSlug("greenhouse", " Xendit "), "xendit");
 });
 
+test("aggregator filters that mean the same page or search are stored as one source", () => {
+  assert.equal(normalizeSlug("linkedin", "singapore"), "Singapore");
+  assert.equal(normalizeSlug("linkedin", "  south   jakarta "), "South Jakarta");
+  assert.equal(normalizeSlug("ycombinator", "https://www.ycombinator.com/internships"), "internships");
+  assert.equal(normalizeSlug("ycombinator", "ycombinator.com/jobs/role/Software-Engineer/?ref=nav"), "jobs/role/software-engineer");
+});
+
 test("imported pages are not a source you can subscribe to", () => {
   assert.equal(createSourceSchema.safeParse({ kind: "web", slug: "x" }).success, false);
 });

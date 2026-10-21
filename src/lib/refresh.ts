@@ -202,7 +202,9 @@ export async function runRefreshTick({ manual }: { manual: boolean }): Promise<R
     while (Date.now() - started < TIME_BUDGET_MS) {
       const batch = await pendingSources(active.startedAt, DISCOVERY_SOURCES_PER_RUN);
       if (batch.length === 0) break;
-      const results = await mapWithConcurrency(batch, SOURCE_CONCURRENCY, ingestSource);
+      const results = await mapWithConcurrency(batch, SOURCE_CONCURRENCY, (source) =>
+        ingestSource(source, started + TIME_BUDGET_MS),
+      );
       report.sources.push(...results.map((result) => result.report));
       report.listingsUpserted += results.reduce((sum, result) => sum + result.upserted, 0);
       if (!manual && report.sources.length >= DISCOVERY_SOURCES_PER_RUN) break;

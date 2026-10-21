@@ -45,7 +45,8 @@ export function normalizeSlug(kind: JobSourceKind, slug: string): string {
   if (!acceptsSlug(kind)) return "";
   const trimmed = slug.trim();
   if (SOURCE_NEEDS_SLUG[kind]) return trimmed.toLowerCase();
-  return trimmed || SOURCE_SLUG_DEFAULTS[kind] || "";
+  const value = trimmed || SOURCE_SLUG_DEFAULTS[kind] || "";
+  return adapterFor(kind).canonicalSlug?.(value) ?? value;
 }
 
 export async function resolveSourceName(kind: JobSourceKind, slug: string): Promise<string> {

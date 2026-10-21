@@ -1,3 +1,4 @@
+import { SOURCE_SLUG_DEFAULTS } from "@/lib/source-meta";
 import { cleanText, decodeEntities, fetchFeed, listing, looksRemote, plainText, type NormalizedListing, type SourceAdapter } from "./types";
 
 type YcJob = {
@@ -15,7 +16,7 @@ type YcJob = {
 type YcPage = { props?: { jobPostings?: YcJob[]; job?: YcJob } };
 
 const ORIGIN = "https://www.ycombinator.com";
-const DEFAULT_PAGE = "internships";
+const DEFAULT_PAGE = SOURCE_SLUG_DEFAULTS.ycombinator!;
 
 function pagePath(slug: string): string {
   return (
@@ -59,7 +60,7 @@ function toListing(board: string, job: YcJob): NormalizedListing {
 }
 
 export const ycombinator: SourceAdapter = {
-  complete: false,
+  canonicalSlug: pagePath,
 
   async list(source) {
     const path = pagePath(source.slug);
@@ -69,11 +70,11 @@ export const ycombinator: SourceAdapter = {
       .map((job) => toListing(path, job));
   },
 
-  async hydrate(source, summary) {
+  async hydrate(_source, summary) {
     const page = await fetchPage(new URL(summary.url).pathname.replace(/^\/+/, ""));
-    const job = page.props?.job;
-    if (!job?.id) throw new Error(`No YC job at ${summary.url}`);
-    return { ...toListing(pagePath(source.slug), { ...job, url: job.url || summary.url }), needsHydration: false };
+    const description = plainText(page.props?.job?.description);
+    if (!description) throw new Error(`No YC job description at ${summary.url}`);
+    return { ...summary, description, needsHydration: false };
   },
 
   async resolveName(slug) {

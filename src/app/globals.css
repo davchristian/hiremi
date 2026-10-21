@@ -98,7 +98,6 @@
 }
 
 :root {
-  color-scheme: light;
   --background: var(--color-base);
   --foreground: var(--color-text);
   --card: var(--color-panel);
@@ -122,6 +121,8 @@
 
 @layer base {
   :root {
+    color-scheme: light;
+
     @variant dark {
       color-scheme: dark;
       --color-base: #11130f;

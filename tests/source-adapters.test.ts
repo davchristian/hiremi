@@ -292,9 +292,11 @@ test("ycombinator reads the internships page and hydrates each job from its own 
     "https://www.ycombinator.com/internships": inertiaPage("InternshipsPage", {
       jobPostings: [job, { id: 2, title: "", url: "/companies/x/jobs/untitled" }],
     }),
-    "https://www.ycombinator.com/companies/browser-use/jobs/": inertiaPage("WaasShowJobPage", {
-      job: { ...job, description: "### About\n\nBuild agents & \"tools\".\n\n\n\n- TypeScript" },
+    "https://www.ycombinator.com/companies/browser-use/jobs/JwGWpEP": inertiaPage("WaasShowJobPage", {
+      company: { name: "Browser Use" },
+      job: { id: job.id, title: job.title, description: "### About\n\nBuild agents & \"tools\".\n\n\n\n- TypeScript" },
     }),
+    "https://www.ycombinator.com/companies/x/jobs/": inertiaPage("WaasShowJobPage", { job: { id: 3, description: "" } }),
   });
 
   const source = ref("ycombinator", "");
@@ -315,6 +317,12 @@ test("ycombinator reads the internships page and hydrates each job from its own 
   assert.equal(full.description, "### About\n\nBuild agents & \"tools\".\n\n- TypeScript");
   assert.equal(full.needsHydration, false);
   assert.equal(full.url, summary.url);
+  assert.equal(full.company, "Browser Use");
+  assert.equal(full.location, summary.location);
+  assert.equal(full.department, summary.department);
+
+  const blank = { ...summary, url: "https://www.ycombinator.com/companies/x/jobs/blank" };
+  await assert.rejects(adapterFor("ycombinator").hydrate!(source, blank), /No YC job description/);
 });
 
 test("ycombinator accepts a pasted job list URL as the page to read", async (t) => {
@@ -388,7 +396,7 @@ test("linkedin hydrates the description and criteria from the guest job page", a
       <section class="show-more-less-html" data-max-lines="5">
         <div class="show-more-less-html__markup show-more-less-html__markup--clamp-after-5
             relative overflow-hidden">
-          <p>Build testable code.</p><p><strong>Requirements</strong></p><ul><li>Go</li></ul>
+          <p>Build testable code.</p><div><strong>Requirements</strong></div><ul><li>Go</li></ul>
         </div>
         <button class="show-more-less-html__button">Show more</button>
       </section>
@@ -430,15 +438,27 @@ test("linkedin hydrates the description and criteria from the guest job page", a
   assert.equal(full.title, "Software Engineer Intern");
 });
 
-test("linkedin keeps the search card when rate limited and backs off further requests", async (t) => {
+test("linkedin fails a job page with no description so it is retried next cycle", async (t) => {
+  serve(t, { "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/1": "<html><body>Sign in to view</body></html>" });
+  const [summary] = parseSearchCards(linkedinCard("1", "Software Engineer Intern", "PT Yonyou", "Jakarta, Indonesia"), "Indonesia");
+  await assert.rejects(adapterFor("linkedin").hydrate!(ref("linkedin", "Indonesia"), summary), /no description/);
+});
+
+test("linkedin fails the hydration when rate limited and backs off further requests", async (t) => {
   const fetchMock = t.mock.method(globalThis, "fetch", async () => new Response("", { status: 429 }));
   const [summary] = parseSearchCards(linkedinCard("4441444761", "Backend Developer Intern", "Tokopedia", "Jakarta, Indonesia"), "Indonesia");
 
-  const kept = await adapterFor("linkedin").hydrate!(ref("linkedin", "Indonesia"), summary);
-  assert.equal(kept.description, "");
-  assert.equal(kept.title, "Backend Developer Intern");
-  assert.equal(kept.needsHydration, false);
+  await assert.rejects(adapterFor("linkedin").hydrate!(ref("linkedin", "Indonesia"), summary), /responded 429/);
+  await assert.rejects(adapterFor("linkedin").hydrate!(ref("linkedin", "Indonesia"), summary), /rate limiting/);
+  await assert.rejects(fetchSource(ref("linkedin", "Singapore")), /rate limiting/);
+  assert.equal(fetchMock.mock.callCount(), 1);
+});
 
+test("linkedin also backs off when it blocks a request with status 999", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.now() + 11 * 60_000 });
+  const fetchMock = t.mock.method(globalThis, "fetch", async () => ({ ok: false, status: 999 }) as Response);
+
+  await assert.rejects(fetchSource(ref("linkedin", "Singapore")), /responded 999/);
   await assert.rejects(fetchSource(ref("linkedin", "Singapore")), /rate limiting/);
   assert.equal(fetchMock.mock.callCount(), 1);
 });

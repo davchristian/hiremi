@@ -265,6 +265,32 @@ test("only new postings are hydrated, and ones the listing already excludes are 
   assert.equal(fetchMock.mock.callCount(), 1);
 });
 
+test("failed hydrations are counted and their listings left for the next cycle", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("", { status: 503 }));
+  const source = { kind: "smartrecruiters" as const, slug: "grab", label: "Grab" };
+  const item = (id: string) =>
+    listing({ source: "smartrecruiters", externalId: `grab:${id}`, board: "grab", location: "Singapore", needsHydration: true });
+
+  const selection = await selectForStorage(source, [item("1"), item("2")], new Set());
+
+  assert.deepEqual(selection.store, []);
+  assert.equal(selection.hydrated, 2);
+  assert.equal(selection.failed, 2);
+  assert.match(selection.firstError ?? "", /responded 503/);
+});
+
+test("no hydration starts once the refresh deadline has passed", async (t) => {
+  const fetchMock = t.mock.method(globalThis, "fetch", async () => Response.json({}));
+  const source = { kind: "smartrecruiters" as const, slug: "grab", label: "Grab" };
+  const item = listing({ source: "smartrecruiters", externalId: "grab:1", board: "grab", location: "Singapore", needsHydration: true });
+
+  const selection = await selectForStorage(source, [item], new Set(), 0);
+
+  assert.deepEqual(selection.store, []);
+  assert.equal(selection.hydrated, 0);
+  assert.equal(fetchMock.mock.callCount(), 0);
+});
+
 test("a new refresh cycle starts once the previous one finished and 72 hours have passed", () => {
   const now = new Date("2026-10-06T12:00:00Z");
   assert.equal(cycleIsDue(null, now), true);

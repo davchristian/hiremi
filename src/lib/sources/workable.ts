@@ -31,8 +31,6 @@ function locationsOf(job: WorkableJob): WorkableLocation[] {
 }
 
 export const workable: SourceAdapter = {
-  complete: true,
-
   async list(source) {
     const res = await fetchFeed(accountUrl(source.slug, true));
     const json = (await res.json()) as { name?: string; jobs?: WorkableJob[] };

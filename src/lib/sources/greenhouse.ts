@@ -19,8 +19,6 @@ function boardUrl(token: string): string {
 }
 
 export const greenhouse: SourceAdapter = {
-  complete: true,
-
   async list(source) {
     const res = await fetchFeed(`${boardUrl(source.slug)}/jobs?content=true`);
     const json = (await res.json()) as { jobs?: GreenhouseJob[] };

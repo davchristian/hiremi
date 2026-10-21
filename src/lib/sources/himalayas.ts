@@ -25,8 +25,6 @@ function searchUrl(country: string, cursor: string | null, page: number): string
 }
 
 export const himalayas: SourceAdapter = {
-  complete: false,
-
   async list(source) {
     const country = source.slug.trim() || DEFAULT_COUNTRY;
     const jobs = new Map<string, HimalayasJob>();

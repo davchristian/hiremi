@@ -44,8 +44,6 @@ function locationOf(job: CatapaJob): string {
 }
 
 export const catapa: SourceAdapter = {
-  complete: true,
-
   async list(source) {
     const jobs: CatapaJob[] = [];
     for (let page = 0; page < MAX_PAGES; page++) {
