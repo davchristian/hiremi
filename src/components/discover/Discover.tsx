@@ -235,7 +235,7 @@ export function Discover({
         )}
       </header>
 
-      <div className="grid min-h-0 flex-1 desk:grid-cols-[minmax(300px,400px)_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] desk:grid-cols-[minmax(300px,400px)_minmax(0,1fr)]">
         <div className={cn("min-h-0 overflow-y-auto border-separator desk:border-r", visibleSelected && "max-desk:hidden")}>
           {!hasProfile && (
             <Notice

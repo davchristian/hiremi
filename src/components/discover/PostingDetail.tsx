@@ -69,7 +69,7 @@ export function PostingDetail({
   const himalayas = match.source === "himalayas";
 
   return (
-    <article aria-labelledby="posting-title" className="flex flex-col gap-6 px-4 pb-10 pt-4 desk:px-8 desk:pt-6">
+    <article aria-labelledby="posting-title" className="flex min-w-0 flex-col gap-6 wrap-anywhere px-4 pb-10 pt-4 desk:px-8 desk:pt-6">
       <button type="button" onClick={onBack} className="-ml-1 inline-flex items-center gap-0.5 self-start text-body text-tint desk:hidden">
         <ChevronLeft className="size-5" strokeWidth={2.25} />
         Discover
@@ -104,7 +104,7 @@ export function PostingDetail({
           href={match.url}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-8 items-center gap-1.5 rounded-control bg-fill-strong px-3.5 text-body font-medium text-text transition-transform hover:bg-[rgb(245_240_230/0.18)] active:scale-[0.97]"
+          className="inline-flex h-8 items-center gap-1.5 rounded-control bg-fill-strong px-3.5 text-body font-medium text-text transition-transform hover:bg-fill-hover active:scale-[0.97]"
         >
           {himalayas ? "View on Himalayas" : "View posting"}
           <ArrowUpRight className="size-4" strokeWidth={2} />

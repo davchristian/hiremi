@@ -2,38 +2,58 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+}
 
 @theme {
-  --color-base: #12100e;
-  --color-panel: #1b1815;
-  --color-panel-alt: #25211c;
-  --color-panel-raised: #2c2722;
-  --color-hairline: #38312a;
-  --color-separator: rgb(245 240 230 / 0.09);
-  --color-fill: rgb(245 240 230 / 0.08);
-  --color-fill-strong: rgb(245 240 230 / 0.13);
+  --color-base: #f3eee2;
+  --color-panel: #fffcf5;
+  --color-panel-alt: #efe8da;
+  --color-panel-raised: #fffdf8;
+  --color-hairline: #e0d7c5;
+  --color-separator: rgb(43 39 33 / 0.1);
+  --color-fill: rgb(43 39 33 / 0.045);
+  --color-fill-strong: rgb(43 39 33 / 0.08);
+  --color-fill-hover: rgb(43 39 33 / 0.12);
+  --color-highlight: rgb(255 255 255 / 0.6);
+  --color-knob: #ffffff;
+  --color-shade: rgb(58 47 28 / 0.45);
+  --color-chrome: rgb(246 241 230 / 0.78);
+  --color-menu: rgb(255 253 248 / 0.88);
 
-  --color-text: #f5f0e6;
-  --color-text-muted: #a39a8c;
-  --color-text-dim: #7a7166;
+  --color-text: #2b2721;
+  --color-text-muted: #5f584b;
+  --color-text-dim: #6f6656;
 
-  --color-tint: #ff6b35;
-  --color-tint-hover: #ff8052;
-  --color-on-tint: #12100e;
-  --color-tint-soft: rgb(255 107 53 / 0.14);
+  --color-tint: #456f3a;
+  --color-tint-hover: #3a5f31;
+  --color-on-tint: #fffcf5;
+  --color-tint-soft: rgb(69 111 58 / 0.12);
+  --color-selected: #dfead3;
+  --color-tint-ring: rgb(69 111 58 / 0.28);
+  --color-tint-select: rgb(69 111 58 / 0.22);
+  --color-tint-inverse: #b5dba5;
 
-  --color-danger: #e8684f;
-  --color-danger-soft: rgb(232 104 79 / 0.14);
-  --color-warning: #e6a93f;
-  --color-warning-soft: rgb(230 169 63 / 0.14);
-  --color-success: #6bbf6a;
+  --color-danger: #b8432e;
+  --color-danger-soft: rgb(184 67 46 / 0.1);
+  --color-danger-hover: rgb(184 67 46 / 0.17);
+  --color-warning: #9a6410;
+  --color-warning-soft: rgb(154 100 16 / 0.12);
+  --color-success: #3f7a37;
 
-  --color-wishlist: #f5f0e6;
-  --color-applied: #ff6b35;
-  --color-interview: #e6a93f;
-  --color-offer: #6bbf6a;
-  --color-rejected: #7a7166;
+  --color-wishlist: #c4b89e;
+  --color-applied: #a68b5b;
+  --color-interview: #c98f2e;
+  --color-offer: #456f3a;
+  --color-rejected: #a39a8c;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
@@ -78,7 +98,7 @@
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --background: var(--color-base);
   --foreground: var(--color-text);
   --card: var(--color-panel);
@@ -101,6 +121,51 @@
 }
 
 @layer base {
+  :root {
+    @variant dark {
+      color-scheme: dark;
+      --color-base: #11130f;
+      --color-panel: #1a1d17;
+      --color-panel-alt: #23271f;
+      --color-panel-raised: #2a2e25;
+      --color-hairline: #343a2f;
+      --color-separator: rgb(239 234 220 / 0.09);
+      --color-fill: rgb(239 234 220 / 0.06);
+      --color-fill-strong: rgb(239 234 220 / 0.13);
+      --color-fill-hover: rgb(239 234 220 / 0.18);
+      --color-highlight: rgb(239 234 220 / 0.12);
+      --color-knob: #efeadc;
+      --color-shade: rgb(0 0 0);
+      --color-chrome: rgb(26 29 23 / 0.72);
+      --color-menu: rgb(42 46 37 / 0.86);
+
+      --color-text: #efeadc;
+      --color-text-muted: #a8aa99;
+      --color-text-dim: #979a8a;
+
+      --color-tint: #9cc98a;
+      --color-tint-hover: #b1d6a1;
+      --color-on-tint: #11130f;
+      --color-tint-soft: rgb(156 201 138 / 0.14);
+      --color-selected: #2a3424;
+      --color-tint-ring: rgb(156 201 138 / 0.3);
+      --color-tint-select: rgb(156 201 138 / 0.32);
+      --color-tint-inverse: #456f3a;
+
+      --color-danger: #e8684f;
+      --color-danger-soft: rgb(232 104 79 / 0.14);
+      --color-danger-hover: rgb(232 104 79 / 0.22);
+      --color-warning: #e6a93f;
+      --color-warning-soft: rgb(230 169 63 / 0.14);
+      --color-success: #8cc47a;
+
+      --color-wishlist: #efeadc;
+      --color-applied: #cfc3a3;
+      --color-interview: #e6a93f;
+      --color-offer: #9cc98a;
+      --color-rejected: #76796b;
+    }
+  }
   * {
     @apply border-border outline-ring/50;
   }
@@ -120,7 +185,7 @@
     cursor: pointer;
   }
   :focus-visible {
-    outline: 3px solid rgb(255 107 53 / 0.55);
+    outline: 3px solid var(--color-tint-ring);
     outline-offset: 1px;
   }
 }
@@ -174,7 +239,7 @@
 }
 
 @utility material-chrome {
-  background-color: rgb(27 24 21 / 0.72);
+  background-color: var(--color-chrome);
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   backdrop-filter: blur(24px) saturate(150%);
   @media (prefers-reduced-transparency: reduce) {
@@ -185,7 +250,7 @@
 }
 
 @utility material-menu {
-  background-color: rgb(44 39 34 / 0.86);
+  background-color: var(--color-menu);
   -webkit-backdrop-filter: blur(30px) saturate(160%);
   backdrop-filter: blur(30px) saturate(160%);
   @media (prefers-reduced-transparency: reduce) {
@@ -196,7 +261,7 @@
 }
 
 ::selection {
-  background: rgb(255 107 53 / 0.35);
+  background: var(--color-tint-select);
   color: var(--color-text);
 }
 

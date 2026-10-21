@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role={toast.tone === "error" ? "alert" : "status"}
-            className="pointer-events-auto flex max-w-[min(32rem,100%)] items-center gap-3 rounded-full bg-text py-2 pl-4 pr-2 text-callout font-medium text-[var(--color-base)] shadow-xl shadow-black/50"
+            className="pointer-events-auto flex max-w-[min(32rem,100%)] items-center gap-3 rounded-full bg-text py-2 pl-4 pr-2 text-callout font-medium text-[var(--color-base)] shadow-xl shadow-shade/50"
             style={{ animation: "toast-in 220ms var(--ease-standard)" }}
           >
             {toast.tone === "error" && <AlertCircle className="size-4 shrink-0 text-danger" strokeWidth={2} />}
@@ -67,7 +67,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.action?.onClick();
                   dismiss(toast.id);
                 }}
-                className="shrink-0 rounded-full px-3 py-1 font-semibold text-[#c9461a] transition-colors hover:bg-black/5"
+                className="shrink-0 rounded-full px-3 py-1 font-semibold text-tint-inverse transition-colors hover:bg-base/10"
               >
                 {toast.action.label}
               </button>

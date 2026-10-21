@@ -26,7 +26,7 @@ export function PullDownMenu({
       <Menu.Trigger render={trigger} />
       <Menu.Portal>
         <Menu.Positioner sideOffset={6} align="end" className="z-[60] outline-none">
-          <Menu.Popup className="material-menu min-w-52 origin-[var(--transform-origin)] rounded-[10px] border border-separator p-1 text-text shadow-2xl shadow-black/50 outline-none transition-[transform,opacity] duration-100 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0">
+          <Menu.Popup className="material-menu min-w-52 origin-[var(--transform-origin)] rounded-[10px] border border-separator p-1 text-text shadow-2xl shadow-shade/50 outline-none transition-[transform,opacity] duration-100 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0">
             {title && <p className="px-2.5 pb-1 pt-1.5 text-footnote font-semibold text-text-dim">{title}</p>}
             {toggles.map((toggle) => (
               <Menu.CheckboxItem

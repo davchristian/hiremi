@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { parseISODate, toISODate } from "@/lib/format";
 
 const CONTROL =
-  "w-full rounded-control border border-hairline bg-panel-alt px-3 text-body text-text placeholder:text-text-dim transition-[border-color,box-shadow] duration-150 outline-none focus:border-tint focus:shadow-[0_0_0_3px_rgb(255_107_53/0.28)] aria-invalid:border-danger disabled:opacity-50";
+  "w-full rounded-control border border-hairline bg-panel-alt px-3 text-body text-text placeholder:text-text-dim transition-[border-color,box-shadow] duration-150 outline-none focus:border-tint focus:shadow-[0_0_0_3px_var(--color-tint-ring)] aria-invalid:border-danger disabled:opacity-50";
 
 export function Field({
   label,
@@ -75,7 +75,7 @@ export const SearchField = forwardRef<
             onChange("");
           }
         }}
-        className="h-8 w-full rounded-control bg-fill pl-8 pr-8 text-body text-text placeholder:text-text-dim outline-none transition-shadow focus:shadow-[0_0_0_3px_rgb(255_107_53/0.28)] [&::-webkit-search-cancel-button]:hidden"
+        className="h-8 w-full rounded-control bg-fill pl-8 pr-8 text-body text-text placeholder:text-text-dim outline-none transition-shadow focus:shadow-[0_0_0_3px_var(--color-tint-ring)] [&::-webkit-search-cancel-button]:hidden"
         {...props}
       />
       {value && (
@@ -125,7 +125,7 @@ export function TokenField({
   }
 
   return (
-    <div className="flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-control border border-hairline bg-panel-alt px-1.5 py-1.5 transition-[border-color,box-shadow] focus-within:border-tint focus-within:shadow-[0_0_0_3px_rgb(255_107_53/0.28)]">
+    <div className="flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-control border border-hairline bg-panel-alt px-1.5 py-1.5 transition-[border-color,box-shadow] focus-within:border-tint focus-within:shadow-[0_0_0_3px_var(--color-tint-ring)]">
       {values.map((value) => (
         <span key={value} className="inline-flex items-center gap-1 rounded-[6px] bg-tint-soft py-0.5 pl-2 pr-1 text-callout text-text">
           {value}
@@ -180,7 +180,7 @@ export function DateField({
             <button
               id={id}
               type="button"
-              className="inline-flex h-8 items-center gap-2 rounded-control bg-fill-strong px-3 text-body text-text transition-[background-color,transform] active:scale-[0.97] hover:bg-[rgb(245_240_230/0.18)]"
+              className="inline-flex h-8 items-center gap-2 rounded-control bg-fill-strong px-3 text-body text-text transition-[background-color,transform] active:scale-[0.97] hover:bg-fill-hover"
             />
           }
         >

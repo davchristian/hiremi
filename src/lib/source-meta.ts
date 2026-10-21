@@ -11,6 +11,8 @@ export const SOURCE_KINDS: JobSourceKind[] = [
   "catapa",
   "themuse",
   "himalayas",
+  "ycombinator",
+  "linkedin",
 ];
 
 export const SOURCE_LABELS: Record<JobSourceKind, string> = {
@@ -22,6 +24,8 @@ export const SOURCE_LABELS: Record<JobSourceKind, string> = {
   catapa: "CATAPA",
   themuse: "The Muse",
   himalayas: "Himalayas",
+  ycombinator: "Y Combinator",
+  linkedin: "LinkedIn",
   web: "Imported page",
 };
 
@@ -34,6 +38,8 @@ export const SOURCE_NEEDS_SLUG: Record<JobSourceKind, boolean> = {
   catapa: true,
   themuse: false,
   himalayas: false,
+  ycombinator: false,
+  linkedin: false,
   web: false,
 };
 
@@ -46,6 +52,8 @@ export const SOURCE_SLUG_OPTIONAL: Record<JobSourceKind, boolean> = {
   catapa: false,
   themuse: true,
   himalayas: true,
+  ycombinator: true,
+  linkedin: true,
   web: false,
 };
 
@@ -58,6 +66,8 @@ export const SOURCE_COMPLETE: Record<JobSourceKind, boolean> = {
   catapa: true,
   themuse: false,
   himalayas: false,
+  ycombinator: false,
+  linkedin: false,
   web: false,
 };
 
@@ -76,12 +86,16 @@ export const SOURCE_SLUG_HINTS: Record<JobSourceKind, string> = {
   catapa: "Company name from career.catapa.com/<name>, or paste the board URL",
   themuse: "Category, such as Software Engineering or Data and Analytics. Leave blank for Software Engineering.",
   himalayas: "Country the job must be open to. Leave blank for Indonesia.",
+  ycombinator: "A job list page on ycombinator.com, such as jobs/role/software-engineer/singapore. Leave blank for internships.",
+  linkedin: "Location to search, such as Singapore or Jakarta. Leave blank for Indonesia.",
   web: "",
 };
 
 export const SOURCE_SLUG_DEFAULTS: Partial<Record<JobSourceKind, string>> = {
   themuse: "Software Engineering",
   himalayas: "Indonesia",
+  ycombinator: "internships",
+  linkedin: "Indonesia",
 };
 
 const BOARD_URLS: [JobSourceKind, RegExp][] = [

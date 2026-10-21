@@ -91,6 +91,9 @@ test("aggregators take an optional filter and fall back to a default", () => {
   assert.equal(acceptsSlug("himalayas"), true);
   assert.equal(normalizeSlug("himalayas", " "), "Indonesia");
   assert.equal(normalizeSlug("themuse", ""), "Software Engineering");
+  assert.equal(normalizeSlug("ycombinator", " "), "internships");
+  assert.equal(normalizeSlug("linkedin", ""), "Indonesia");
+  assert.equal(normalizeSlug("linkedin", " Singapore "), "Singapore");
   assert.equal(normalizeSlug("greenhouse", " Xendit "), "xendit");
 });
 

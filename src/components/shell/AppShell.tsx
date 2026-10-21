@@ -24,7 +24,7 @@ export function AppIcon({ size = 28 }: { size?: number }) {
   return (
     <span
       aria-hidden
-      className="flex shrink-0 items-center justify-center rounded-[28%] bg-tint text-on-tint shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]"
+      className="flex shrink-0 items-center justify-center rounded-[28%] bg-tint text-on-tint shadow-[inset_0_1px_0_rgb(255_255_255/0.22)]"
       style={{ width: size, height: size }}
     >
       <BriefcaseBusiness style={{ width: size * 0.56, height: size * 0.56 }} strokeWidth={2} />
