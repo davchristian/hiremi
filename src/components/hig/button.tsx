@@ -8,10 +8,10 @@ export type ButtonVariant = "gray" | "accent" | "plain" | "destructive";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  gray: "bg-fill-strong text-text hover:bg-[rgb(245_240_230/0.18)]",
+  gray: "bg-fill-strong text-text hover:bg-fill-hover",
   accent: "bg-tint text-on-tint font-semibold hover:bg-tint-hover",
   plain: "bg-transparent text-tint hover:bg-tint-soft",
-  destructive: "bg-danger-soft text-danger hover:bg-[rgb(232_104_79/0.22)]",
+  destructive: "bg-danger-soft text-danger hover:bg-danger-hover",
 };
 
 const SIZES: Record<ButtonSize, string> = {

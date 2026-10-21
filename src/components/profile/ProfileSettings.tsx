@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { ClientProfile } from "@/lib/types";
+import { THEME_COOKIE, type ThemePreference } from "@/lib/theme";
 import { Button } from "@/components/hig/button";
 import { SegmentedControl, Switch } from "@/components/hig/controls";
 import { TextArea, TextField, TokenField } from "@/components/hig/fields";
@@ -36,6 +37,23 @@ const WORK_MODES: { value: ClientProfile["workMode"]; label: string }[] = [
   { value: "onsite", label: "On-site" },
 ];
 
+const THEMES: { value: ThemePreference; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
+function applyTheme(theme: ThemePreference) {
+  const root = document.documentElement;
+  if (theme === "system") {
+    delete root.dataset.theme;
+    document.cookie = `${THEME_COOKIE}=; path=/; max-age=0; samesite=lax`;
+  } else {
+    root.dataset.theme = theme;
+    document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; samesite=lax`;
+  }
+}
+
 function errorMessage(body: unknown): string {
   const error = (body as { error?: unknown } | null)?.error;
   if (typeof error === "string") return error;
@@ -58,12 +76,21 @@ function Row({ label, htmlFor, helper, children, stacked = false }: { label: str
   );
 }
 
-export function ProfileSettings({ initialProfile, matchingAvailable }: { initialProfile: ClientProfile | null; matchingAvailable: boolean }) {
+export function ProfileSettings({
+  initialProfile,
+  matchingAvailable,
+  initialTheme,
+}: {
+  initialProfile: ClientProfile | null;
+  matchingAvailable: boolean;
+  initialTheme: ThemePreference;
+}) {
   const toast = useToast();
   const [saved, setSaved] = useState(initialProfile ?? EMPTY);
   const [form, setForm] = useState(initialProfile ?? EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState(initialTheme);
 
   const dirty = JSON.stringify({ ...form, hasEmbedding: false }) !== JSON.stringify({ ...saved, hasEmbedding: false });
   const missingRoles = form.targetRoles.length === 0;
@@ -187,6 +214,20 @@ export function ProfileSettings({ initialProfile, matchingAvailable }: { initial
             label="I have a Singapore work pass"
             checked={form.singaporePassConfirmed}
             onChange={(singaporePassConfirmed) => setForm((f) => ({ ...f, singaporePassConfirmed }))}
+          />
+        </Row>
+      </GroupedSection>
+
+      <GroupedSection header="Appearance" footer="System follows your device. This applies right away and is saved in this browser.">
+        <Row label="Theme">
+          <SegmentedControl
+            label="Theme"
+            value={theme}
+            options={THEMES}
+            onChange={(next) => {
+              setTheme(next);
+              applyTheme(next);
+            }}
           />
         </Row>
       </GroupedSection>

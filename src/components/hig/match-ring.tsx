@@ -28,7 +28,7 @@ export function MatchRing({
       aria-hidden={label ? undefined : true}
       className={cn("shrink-0 -rotate-90", className)}
     >
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgb(255 107 53 / 0.18)" strokeWidth={width} />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-tint-soft)" strokeWidth={width} />
       {value !== null && (
         <circle
           cx={size / 2}

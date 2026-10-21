@@ -50,7 +50,7 @@ export function PopUpButton<T extends string>({
         className={cn(
           "inline-flex min-w-0 select-none items-center justify-between gap-2 rounded-control font-medium transition-[background-color,transform] duration-150 ease-standard active:scale-[0.97] data-popup-open:bg-fill-strong disabled:opacity-40",
           size === "sm" ? "h-7 pl-2.5 pr-1.5 text-callout" : "h-8 pl-3 pr-2 text-body",
-          variant === "gray" ? "bg-fill-strong text-text hover:bg-[rgb(245_240_230/0.18)]" : "text-text-muted hover:bg-fill hover:text-text",
+          variant === "gray" ? "bg-fill-strong text-text hover:bg-fill-hover" : "text-text-muted hover:bg-fill hover:text-text",
           className,
         )}
       >
@@ -64,7 +64,7 @@ export function PopUpButton<T extends string>({
       </Select.Trigger>
       <Select.Portal>
         <Select.Positioner sideOffset={4} className="z-[60] select-none outline-none">
-          <Select.Popup className="material-menu min-w-[max(var(--anchor-width),11rem)] origin-[var(--transform-origin)] rounded-[10px] border border-separator p-1 text-body text-text shadow-2xl shadow-black/50 outline-none transition-[transform,opacity] duration-100 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 data-[side=none]:data-starting-style:scale-100 data-[side=none]:data-starting-style:opacity-100">
+          <Select.Popup className="material-menu min-w-[max(var(--anchor-width),11rem)] origin-[var(--transform-origin)] rounded-[10px] border border-separator p-1 text-body text-text shadow-2xl shadow-shade/50 outline-none transition-[transform,opacity] duration-100 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 data-[side=none]:data-starting-style:scale-100 data-[side=none]:data-starting-style:opacity-100">
             <Select.List className="max-h-[var(--available-height)] overflow-y-auto">
               {options.map((option) => (
                 <Select.Item

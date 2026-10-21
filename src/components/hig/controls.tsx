@@ -46,7 +46,7 @@ export function SegmentedControl<T extends string>({
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
               "min-w-0 flex-1 whitespace-nowrap rounded-[6px] px-3 text-callout font-medium transition-[background-color,color,box-shadow] duration-150 ease-standard",
-              selected ? "bg-panel-raised text-text shadow-[0_1px_2px_rgb(0_0_0/0.4),inset_0_0_0_0.5px_rgb(245_240_230/0.12)]" : "text-text-muted hover:text-text",
+              selected ? "bg-panel-raised text-text shadow-[0_1px_2px_color-mix(in_oklab,var(--color-shade)_40%,transparent),inset_0_0_0_0.5px_var(--color-highlight)]" : "text-text-muted hover:text-text",
             )}
           >
             {option.label}
@@ -79,7 +79,7 @@ export function Switch({
       aria-label={label}
       className="relative inline-flex h-[22px] w-[38px] shrink-0 items-center rounded-full bg-fill-strong p-0.5 transition-colors duration-200 ease-standard data-checked:bg-tint disabled:opacity-40"
     >
-      <SwitchPrimitive.Thumb className="block size-[18px] rounded-full bg-text shadow-[0_1px_3px_rgb(0_0_0/0.45)] transition-transform duration-200 ease-standard data-checked:translate-x-4" />
+      <SwitchPrimitive.Thumb className="block size-[18px] rounded-full bg-knob shadow-[0_1px_3px_color-mix(in_oklab,var(--color-shade)_45%,transparent)] transition-transform duration-200 ease-standard data-checked:translate-x-4" />
     </SwitchPrimitive.Root>
   );
 }

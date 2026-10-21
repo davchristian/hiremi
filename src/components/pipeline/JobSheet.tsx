@@ -94,6 +94,7 @@ export function JobSheet({
       open
       onClose={onClose}
       size="md"
+      closeButton
       title={job.company}
       description={job.role}
       footer={
@@ -101,7 +102,6 @@ export function JobSheet({
           <Button variant="destructive" icon={<Trash2 />} onClick={onDelete} className="desk:mr-auto">
             Delete
           </Button>
-          <Button onClick={onClose}>Close</Button>
           <Button
             variant="accent"
             disabled={changed.length === 0 || invalid || saving}
