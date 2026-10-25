@@ -17,7 +17,7 @@ Stack: Next.js 16 (App Router), React 19, Tailwind v4 + shadcn/ui, Supabase (Pos
 
 1. Install Node 22.18 or newer, then `npm install`. Next.js itself runs on 20.9+, but `npm test` runs TypeScript directly, which needs 22.18.
 2. Create a Supabase project, copy `.env.local.example` to `.env.local`, and fill it in (see below).
-3. For local testing, turn off Authentication → Email → Confirm email in Supabase.
+3. For local testing, turn off Authentication → Email → Confirm email in Supabase. For password reset, add `http://localhost:3000/reset-password` (and your production `/reset-password` URL) under Authentication → URL Configuration → Redirect URLs.
 4. Run `npm run db:migrate`. Keep `DATABASE_URL` on the transaction pooler (port 6543); `drizzle.config.ts` switches drizzle-kit to the session pooler (port 5432) on the same host, because migrations over the transaction pooler hang.
 5. Run `npm run dev` and create an account at `/sign-up`.
 6. For the feed, set `VOYAGE_API_KEY` (optional; without it there's no match score), open `/feed`, fill in the profile, and press refresh. Thirteen default boards are seeded by the migrations; add more by board name or URL.

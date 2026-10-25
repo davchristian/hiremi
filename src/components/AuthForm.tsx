@@ -88,7 +88,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
             placeholder="you@example.com"
           />
         </Field>
-        <Field label="Password" htmlFor="password" helper={signingIn ? undefined : "At least 6 characters."}>
+        <Field
+          label="Password"
+          htmlFor="password"
+          helper={
+            signingIn ? (
+              <Link href="/forgot-password" className="text-tint hover:underline">
+                Forgot password?
+              </Link>
+            ) : (
+              "At least 6 characters."
+            )
+          }
+        >
           <TextField
             id="password"
             type="password"

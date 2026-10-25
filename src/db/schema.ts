@@ -41,6 +41,23 @@ export const jobs = pgTable("jobs", {
 export type Job = typeof jobs.$inferSelect;
 export type NewJob = typeof jobs.$inferInsert;
 
+export const jobStageEvents = pgTable(
+  "job_stage_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    jobId: uuid("job_id")
+      .notNull()
+      .references(() => jobs.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    fromStage: stageEnum("from_stage"),
+    toStage: stageEnum("to_stage").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [index("job_stage_events_job_idx").on(table.jobId, table.createdAt)],
+);
+
+export type JobStageEvent = typeof jobStageEvents.$inferSelect;
+
 export const experienceLevelEnum = pgEnum("experience_level", [
   "student",
   "intern",

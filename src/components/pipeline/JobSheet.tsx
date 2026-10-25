@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
-import type { ClientJob } from "@/lib/types";
-import type { Stage } from "@/lib/stage";
-import { addDaysISODate, todayISODate } from "@/lib/format";
+import { isPendingJob, type ClientJob, type ClientStageEvent } from "@/lib/types";
+import { STAGE_CONFIG, type Stage } from "@/lib/stage";
+import { addDaysISODate, timeAgo, todayISODate } from "@/lib/format";
 import { Button } from "@/components/hig/button";
 import { DateField, Field, TextArea, TextField } from "@/components/hig/fields";
 import { PopUpButton } from "@/components/hig/popup-button";
 import { Sheet } from "@/components/hig/sheet";
+import { ActivityIndicator, StatusDot } from "@/components/hig/status";
 import { STAGE_OPTIONS } from "@/components/pipeline/JobRow";
 
 export type JobEditInput = {
@@ -203,7 +204,63 @@ export function JobSheet({
             {error}
           </p>
         )}
+
+        {!isPendingJob(job) && <StageHistory jobId={job.id} stage={job.stage} />}
       </div>
     </Sheet>
+  );
+}
+
+function StageHistory({ jobId, stage }: { jobId: string; stage: Stage }) {
+  const [events, setEvents] = useState<ClientStageEvent[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/jobs/${jobId}/events`)
+      .then((response) => {
+        if (!response.ok) throw new Error(String(response.status));
+        return response.json() as Promise<{ events: ClientStageEvent[] }>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setEvents(data.events);
+        setFailed(false);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId, stage]);
+
+  return (
+    <section aria-labelledby="job-history" className="flex flex-col gap-2">
+      <h3 id="job-history" className="text-headline text-text">
+        History
+      </h3>
+      {failed ? (
+        <p className="text-callout text-text-dim">Couldn&apos;t load the history.</p>
+      ) : events === null ? (
+        <ActivityIndicator size={14} />
+      ) : events.length === 0 ? (
+        <p className="text-callout text-text-dim">No stage changes yet.</p>
+      ) : (
+        <ol className="flex flex-col gap-1.5">
+          {[...events].reverse().map((event) => (
+            <li key={event.id} className="flex items-center gap-2 text-callout text-text">
+              <StatusDot color={STAGE_CONFIG[event.toStage].color} />
+              <span className="flex-1">
+                {event.fromStage === null ? "Added to" : "Moved to"} {STAGE_CONFIG[event.toStage].label}
+              </span>
+              <time dateTime={event.createdAt} title={new Date(event.createdAt).toLocaleString()} className="text-footnote text-text-dim">
+                {timeAgo(event.createdAt)}
+              </time>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }

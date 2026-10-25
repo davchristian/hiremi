@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { jobs, stageEnum, type Job } from "@/db/schema";
+import { jobStageEvents, jobs, stageEnum, type Job, type JobStageEvent } from "@/db/schema";
+import type { Stage } from "@/lib/stage";
 
 const calendarDate = z.iso.date().transform((value) => new Date(`${value}T00:00:00.000Z`));
 
@@ -41,6 +42,14 @@ export function followUpAfterApplying(appliedDate: Date): Date {
   return new Date(appliedDate.getTime() + FOLLOW_UP_AFTER_DAYS * DAY_MS);
 }
 
+export function stageEventFor(
+  previous: Stage | null,
+  next: Stage | undefined,
+): { fromStage: Stage | null; toStage: Stage } | null {
+  if (next === undefined || next === previous) return null;
+  return { fromStage: previous, toStage: next };
+}
+
 export function listJobs(userId: string): Promise<Job[]> {
   return db.query.jobs.findMany({
     where: eq(jobs.userId, userId),
@@ -61,22 +70,25 @@ export async function createJob(
         ? followUpAfterApplying(appliedDate)
         : null;
 
-  const [job] = await db
-    .insert(jobs)
-    .values({
-      userId,
-      company: input.company,
-      role: input.role,
-      stage,
-      appliedDate,
-      followUpDate,
-      link: input.link || null,
-      notes: input.notes ?? "",
-      listingId: input.listingId ?? null,
-    })
-    .returning();
+  return db.transaction(async (tx) => {
+    const [job] = await tx
+      .insert(jobs)
+      .values({
+        userId,
+        company: input.company,
+        role: input.role,
+        stage,
+        appliedDate,
+        followUpDate,
+        link: input.link || null,
+        notes: input.notes ?? "",
+        listingId: input.listingId ?? null,
+      })
+      .returning();
 
-  return job;
+    await tx.insert(jobStageEvents).values({ jobId: job.id, userId, fromStage: null, toStage: stage });
+    return job;
+  });
 }
 
 export async function updateJob(
@@ -105,22 +117,27 @@ export async function updateJob(
         ? followUpAfterApplying(appliedDate ?? existing.appliedDate ?? utcToday())
         : undefined;
 
-  const [job] = await db
-    .update(jobs)
-    .set({
-      ...(input.company !== undefined && { company: input.company }),
-      ...(input.role !== undefined && { role: input.role }),
-      ...(input.stage !== undefined && { stage: input.stage }),
-      ...(appliedDate !== undefined && { appliedDate }),
-      ...(followUpDate !== undefined && { followUpDate }),
-      ...(input.link !== undefined && { link: input.link || null }),
-      ...(input.notes !== undefined && { notes: input.notes }),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(jobs.id, id), eq(jobs.userId, userId)))
-    .returning();
+  const event = stageEventFor(existing.stage, input.stage);
 
-  return job ?? null;
+  return db.transaction(async (tx) => {
+    const [job] = await tx
+      .update(jobs)
+      .set({
+        ...(input.company !== undefined && { company: input.company }),
+        ...(input.role !== undefined && { role: input.role }),
+        ...(input.stage !== undefined && { stage: input.stage }),
+        ...(appliedDate !== undefined && { appliedDate }),
+        ...(followUpDate !== undefined && { followUpDate }),
+        ...(input.link !== undefined && { link: input.link || null }),
+        ...(input.notes !== undefined && { notes: input.notes }),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(jobs.id, id), eq(jobs.userId, userId)))
+      .returning();
+
+    if (job && event) await tx.insert(jobStageEvents).values({ jobId: id, userId, ...event });
+    return job ?? null;
+  });
 }
 
 export async function deleteJob(userId: string, id: string): Promise<boolean> {
@@ -132,4 +149,13 @@ export async function deleteJob(userId: string, id: string): Promise<boolean> {
     .returning({ id: jobs.id });
 
   return Boolean(deleted);
+}
+
+export async function listStageEvents(userId: string, jobId: string): Promise<JobStageEvent[]> {
+  if (!rowId.safeParse(jobId).success) return [];
+
+  return db.query.jobStageEvents.findMany({
+    where: and(eq(jobStageEvents.jobId, jobId), eq(jobStageEvents.userId, userId)),
+    orderBy: (events, { asc }) => [asc(events.createdAt)],
+  });
 }
