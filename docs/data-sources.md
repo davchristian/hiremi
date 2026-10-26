@@ -1,6 +1,6 @@
 # Data sources
 
-Discovery uses public endpoints intended for listing a company's open jobs: official APIs where a platform has one, and in one case (CATAPA) the public JSON a career page loads. Every request identifies itself with a descriptive User-Agent (`USER_AGENT` in `src/lib/sources/types.ts`), and requests are spread across the hourly runs of a 3-day refresh cycle (see [Refresh schedule](#refresh-schedule)).
+Discovery uses public endpoints intended for listing a company's open jobs: official APIs where a platform has one, the public JSON a career page loads (CATAPA), and the public web pages of two job sites (Y Combinator and LinkedIn). Every request identifies itself with a descriptive User-Agent (`USER_AGENT` in `src/lib/sources/types.ts`), and requests are spread across the hourly runs of a 3-day refresh cycle (see [Refresh schedule](#refresh-schedule)).
 
 ## Integrated
 
@@ -14,11 +14,13 @@ Discovery uses public endpoints intended for listing a company's open jobs: offi
 | CATAPA career pages | `GET https://api-apps.catapa.com/careerpage/{company}/jobs?page=0&size=50` | None | GDP Labs and other Indonesian employers on career.catapa.com. This is the JSON the public career page loads, not a documented API, so it may change without notice. |
 | The Muse API | `GET https://www.themuse.com/api/public/jobs?category=...&level=Internship&page=N` | None (500 requests/hour unauthenticated) | Internships aggregated across many companies, filtered by category. Mostly US. Read up to 15 pages (300 postings) per refresh. |
 | Himalayas API | `GET https://himalayas.app/jobs/api/search?employment_type=Intern&country={country}&page=N` | None (rate limited) | Remote internships open to a country, including worldwide roles. Paged with `page` (the `offset` parameter is deprecated and now ignored; `cursor` is used when the response returns one). Terms require linking back to Himalayas and naming it as the source: jobs link to their Himalayas page and are labeled Himalayas. |
-| Manual entry | None | None | Anything else, including LinkedIn, JobStreet, Glints and Kalibrr postings, and big tech career sites (below). Add it to the board with Add application. |
+| Y Combinator job pages | `GET https://www.ycombinator.com/internships` (or another `/jobs/role/...` page), then each job's own page | None | Jobs at YC startups. There's no API; the adapter reads the job data the page embeds in its `data-page` attribute, and each job page for the description, 25 per board per run. Default page `internships`, which lists a handful of mostly US roles. |
+| LinkedIn guest job pages | `GET https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=software+engineer+intern&location={location}&f_JT=I&start=N` and `/jobs-guest/jobs/api/jobPosting/{id}` | None (rate limited) | Internships posted on LinkedIn in a location, read from the HTML LinkedIn serves signed-out visitors. LinkedIn returns 429 after a few dozen quick requests, so requests are spaced 300 ms apart, all LinkedIn requests pause for 10 minutes after a 429, and a posting whose description can't be fetched is stored from its search card and filled in next cycle. `f_JT=I` alone isn't reliable, so the keywords include "intern". LinkedIn's User Agreement prohibits automated access; this is used at personal-tool volume, and the source can be turned off in Sources. |
+| Manual entry | None | None | Anything else, including JobStreet, Glints and Kalibrr postings, and big tech career sites (below). Add it to the board with Add application. |
 
 Import by URL (Greenhouse, Lever and Ashby links resolved through their APIs, other pages read for schema.org `JobPosting` JSON-LD) is planned; the `web` source kind is reserved for it. The server-side fetch must refuse private and loopback addresses before it ships.
 
-The default sources are seeded by `drizzle/0009_discovery_rls_and_defaults.sql` as rows with no owner: Airwallex, OpenAI and Snowflake (Ashby); Ninja Van, Nium and Binance (Lever); Okta, Twilio and Xendit (Greenhouse); Grab (SmartRecruiters); GDP Labs (CATAPA); The Muse (Software Engineering); and Himalayas (open to Indonesia). Each was checked against its live board in October 2026. Flip was dropped: neither the `flip` Greenhouse board nor the `flip` Ashby board belongs to Flip Indonesia, and no public board for it was found. Users add more in Sources, by board name or by pasting the board URL (`parseBoardInput` in `src/lib/source-meta.ts`); the name is checked against the platform before it's saved.
+The default sources are seeded by `drizzle/0009_discovery_rls_and_defaults.sql` as rows with no owner: Airwallex, OpenAI and Snowflake (Ashby); Ninja Van, Nium and Binance (Lever); Okta, Twilio and Xendit (Greenhouse); Grab (SmartRecruiters); GDP Labs (CATAPA); The Muse (Software Engineering); and Himalayas (open to Indonesia). `drizzle/0010_job_board_sources.sql` adds Y Combinator (internships) and LinkedIn (Indonesia and Singapore). Each was checked against its live board in October 2026. Flip was dropped: neither the `flip` Greenhouse board nor the `flip` Ashby board belongs to Flip Indonesia, and no public board for it was found. Users add more in Sources, by board name or by pasting the board URL (`parseBoardInput` in `src/lib/source-meta.ts`); the name is checked against the platform before it's saved.
 
 ## Eligibility
 
@@ -75,15 +77,14 @@ Only postings that look like software internships are stored (`src/lib/roles.ts`
 
 | Platform | Reason | Alternative |
 | --- | --- | --- |
-| LinkedIn | No public jobs API; the User Agreement prohibits scraping and automated access. | Add the posting by hand. Many LinkedIn postings link to a Greenhouse, Lever or Ashby page; add that board as a source. |
 | JobStreet (SEEK) | No public jobs API; the terms prohibit scraping. | Manual entry. |
 | Glints | No public jobs API; the terms prohibit automated collection. | Manual entry. |
 | Kalibrr | Its search endpoint isn't a public API, and its terms name automated extraction and scraping as misuse. GoTo and Gojek post internships there. Earlier versions of this app read it; migration 0008 removes that source and its listings. | Manual entry. |
 | RemoteOK, We Work Remotely | Removed in migration 0008. Few internships, and the internships they do list are better covered by Himalayas. | Himalayas. |
-| Indeed | Publisher API closed to new partners; terms prohibit scraping. | Manual entry, or add the company's own board. |
+| Indeed | Publisher API closed to new partners, RSS feeds retired, and non-browser requests get a 403; terms prohibit scraping. | Manual entry, or add the company's own board. |
 | Glassdoor | No public jobs API; terms prohibit scraping. | Manual entry. |
 | Handshake | Requires a university login; no public API. | Manual entry. |
-| Wellfound | No public API. | Manual entry, or add the company's ATS board as a source. |
+| Wellfound | No public API, and pages sit behind a Cloudflare Turnstile challenge. | Manual entry, or add the company's ATS board as a source. |
 | Workday career sites | No public API; each tenant differs and uses bot protection (Traveloka's rejects automated requests). | Manual entry. |
 | Shopee, Sea, GoTo, Tokopedia, Bukalapak, Blibli, tiket.com | In-house career portals with no public feed. | Manual entry. |
 | Google, Amazon, Microsoft, Meta, Apple, TikTok/ByteDance, NVIDIA | In-house career sites. Their terms of use restrict automated collection, and their posting pages render with JavaScript without JobPosting data. | Manual entry. |
