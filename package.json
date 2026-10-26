@@ -2,6 +2,9 @@
   "name": "hiremi",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,7 +17,8 @@
     "db:studio": "drizzle-kit studio",
     "probe:sources": "node --import ./tests/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/probe-sources.mts",
     "db:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-db.mts",
-    "refresh": "node --import ./tests/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/refresh.mts"
+    "refresh": "node --import ./tests/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/refresh.mts",
+    "smoke:history": "node --import ./tests/register.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/smoke-stage-history.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

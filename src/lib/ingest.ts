@@ -12,7 +12,7 @@ import { classifyByRules, excludedByListing } from "@/lib/eligibility";
 import { postingHints } from "@/lib/posting-hints";
 import { isSoftwareInternship } from "@/lib/roles";
 import { adapterFor, type NormalizedListing, type SourceRef } from "@/lib/sources";
-import type { JobSourceKind } from "@/lib/source-meta";
+import { SOURCE_COMPLETE, type JobSourceKind } from "@/lib/source-meta";
 
 const MAX_EMBEDDINGS_PER_RUN = 300;
 const HYDRATIONS_PER_SOURCE = 25;
@@ -216,36 +216,48 @@ async function recordFetch(kind: JobSourceKind, slug: string, error: string | nu
     .where(and(eq(jobSources.kind, kind), eq(jobSources.slug, slug)));
 }
 
+export type StorageSelection = {
+  store: NormalizedListing[];
+  touch: string[];
+  hydrated: number;
+  failed: number;
+  firstError?: string;
+};
+
 export async function selectForStorage(
   source: SourceRef,
   relevant: NormalizedListing[],
   known: Set<string>,
-): Promise<{ store: NormalizedListing[]; touch: string[] }> {
+  deadline = Infinity,
+): Promise<StorageSelection> {
   const adapter = adapterFor(source.kind);
-  if (!adapter.hydrate) return { store: relevant, touch: [] };
+  if (!adapter.hydrate) return { store: relevant, touch: [], hydrated: 0, failed: 0 };
 
-  const store: NormalizedListing[] = [];
-  const touch: string[] = [];
-  let hydrated = 0;
+  const selection: StorageSelection = { store: [], touch: [], hydrated: 0, failed: 0 };
+  const { store, touch } = selection;
 
   for (const item of relevant) {
     if (known.has(item.externalId)) {
       touch.push(item.externalId);
     } else if (!item.needsHydration || excludedByListing(item)) {
       store.push(item);
-    } else if (hydrated < HYDRATIONS_PER_SOURCE) {
-      hydrated++;
+    } else if (selection.hydrated < HYDRATIONS_PER_SOURCE && Date.now() < deadline) {
+      selection.hydrated++;
       try {
         store.push(await adapter.hydrate(source, item));
-      } catch {
-        continue;
+      } catch (error) {
+        selection.failed++;
+        selection.firstError ??= error instanceof Error ? error.message : "unknown error";
       }
     }
   }
-  return { store, touch };
+  return selection;
 }
 
-export async function ingestSource(source: SourceRef): Promise<{ report: SourceReport; upserted: number }> {
+export async function ingestSource(
+  source: SourceRef,
+  deadline = Infinity,
+): Promise<{ report: SourceReport; upserted: number }> {
   const { kind, slug } = source;
   try {
     const adapter = adapterFor(kind);
@@ -253,14 +265,15 @@ export async function ingestSource(source: SourceRef): Promise<{ report: SourceR
     const relevant = all.filter(isSoftwareInternship);
     const ids = relevant.map((item) => item.externalId);
     const known = adapter.hydrate ? await describedListingIds(kind, ids) : new Set<string>();
-    const { store, touch } = await selectForStorage(source, relevant, known);
+    const { store, touch, hydrated, failed, firstError } = await selectForStorage(source, relevant, known, deadline);
 
     const upserted = await upsertListings(store);
     await touchListings(kind, touch);
-    const closed = adapter.complete ? (await buildCloseMissing(db, kind, slug, ids)).length : 0;
-    await recordFetch(kind, slug, null);
+    const closed = SOURCE_COMPLETE[kind] ? (await buildCloseMissing(db, kind, slug, ids)).length : 0;
+    const error = hydrated > 0 && failed === hydrated ? `Couldn't load any posting details: ${firstError}` : undefined;
+    await recordFetch(kind, slug, error?.slice(0, 500) ?? null);
 
-    return { report: { kind, slug, fetched: all.length, relevant: relevant.length, closed }, upserted };
+    return { report: { kind, slug, fetched: all.length, relevant: relevant.length, closed, error }, upserted };
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown error";
     await recordFetch(kind, slug, message.slice(0, 500));

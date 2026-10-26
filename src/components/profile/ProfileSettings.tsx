@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { ClientProfile } from "@/lib/types";
-import { THEME_COOKIE, type ThemePreference } from "@/lib/theme";
+import { THEME_COLORS, THEME_COOKIE, type ThemePreference } from "@/lib/theme";
 import { Button } from "@/components/hig/button";
 import { SegmentedControl, Switch } from "@/components/hig/controls";
 import { TextArea, TextField, TokenField } from "@/components/hig/fields";
@@ -52,6 +52,16 @@ function applyTheme(theme: ThemePreference) {
     root.dataset.theme = theme;
     document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; samesite=lax`;
   }
+  syncThemeMeta(theme);
+}
+
+function syncThemeMeta(theme: ThemePreference) {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    const dark = theme === "system" ? (meta.media ? meta.media.includes("dark") : prefersDark) : theme === "dark";
+    meta.content = dark ? THEME_COLORS.dark : THEME_COLORS.light;
+  }
+  document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", theme === "system" ? "light dark" : theme);
 }
 
 function errorMessage(body: unknown): string {

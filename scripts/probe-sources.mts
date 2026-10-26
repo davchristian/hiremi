@@ -35,7 +35,14 @@ for (const source of sources.filter((s) => !only || s.kind === only || s.slug ==
     const rows: string[] = [];
     for (let item of relevant.slice(0, 40)) {
       const pre = excludedByListing(item);
-      if (!pre && adapter.hydrate && item.needsHydration) item = await adapter.hydrate(source, item);
+      if (!pre && adapter.hydrate && item.needsHydration) {
+        try {
+          item = await adapter.hydrate(source, item);
+        } catch (error) {
+          rows.push(`   hydration failed   ${item.title.slice(0, 60).padEnd(60)} | ${(error as Error).message}`);
+          continue;
+        }
+      }
       const hints = postingHints(item);
       const result = pre ? { withoutPass: pre } : classifyByRules({ ...item, duration: hints.duration });
       const status = result.withoutPass.status;

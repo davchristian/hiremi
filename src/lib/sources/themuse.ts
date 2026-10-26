@@ -20,8 +20,6 @@ function pageUrl(category: string, page: number): string {
 }
 
 export const themuse: SourceAdapter = {
-  complete: false,
-
   async list(source) {
     const category = source.slug.trim() || DEFAULT_CATEGORY;
     const jobs: MuseJob[] = [];

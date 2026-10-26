@@ -66,8 +66,6 @@ function toListing(company: string, label: string, posting: SrPosting) {
 }
 
 export const smartrecruiters: SourceAdapter = {
-  complete: true,
-
   async list(source) {
     const company = source.slug;
     const postings: SrPosting[] = [];

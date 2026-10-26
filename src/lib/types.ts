@@ -1,4 +1,4 @@
-import type { Job, JobSource, Profile } from "@/db/schema";
+import type { Job, JobSource, JobStageEvent, Profile } from "@/db/schema";
 import type { JobSourceKind } from "@/lib/source-meta";
 import type { Stage } from "@/lib/stage";
 
@@ -83,5 +83,21 @@ export function toClientJob(job: Job): ClientJob {
     notes: job.notes ?? "",
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
+  };
+}
+
+export type ClientStageEvent = {
+  id: string;
+  fromStage: Stage | null;
+  toStage: Stage;
+  createdAt: string;
+};
+
+export function toClientStageEvent(event: JobStageEvent): ClientStageEvent {
+  return {
+    id: event.id,
+    fromStage: event.fromStage,
+    toStage: event.toStage,
+    createdAt: event.createdAt.toISOString(),
   };
 }

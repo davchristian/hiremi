@@ -29,7 +29,7 @@ export type SourceAdapter = {
   list(source: SourceRef): Promise<NormalizedListing[]>;
   hydrate?(source: SourceRef, listing: NormalizedListing): Promise<NormalizedListing>;
   resolveName(identifier: string): Promise<string>;
-  complete: boolean;
+  canonicalSlug?(slug: string): string;
 };
 
 export function listing(
@@ -228,10 +228,10 @@ export const USER_AGENT =
   "hiremi/1.0 (personal internship tracker; reads public job board APIs on a 3-day cycle)";
 const TIMEOUT_MS = 15_000;
 
-export async function fetchFeed(url: string, accept = "application/json"): Promise<Response> {
+export async function fetchFeed(url: string, accept = "application/json", timeoutMs = TIMEOUT_MS): Promise<Response> {
   const res = await fetch(url, {
     headers: { Accept: accept, "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`${url} responded ${res.status}`);

@@ -10,7 +10,7 @@ if (!url) {
 }
 
 const sql = postgres(url, { prepare: false, connect_timeout: 15, onnotice: () => {} });
-const EXPECTED_TABLES = ["jobs", "profiles", "job_sources", "job_listings", "ingest_cooldowns", "listing_reviews", "refresh_cycles"];
+const EXPECTED_TABLES = ["jobs", "profiles", "job_sources", "job_listings", "ingest_cooldowns", "listing_reviews", "refresh_cycles", "job_stage_events"];
 let failures = 0;
 
 function report(ok: boolean, label: string, detail = "") {
@@ -26,7 +26,7 @@ try {
   report(url.includes(":6543/"), "DATABASE_URL uses the transaction pooler (port 6543)", host);
 
   const migrations = await sql`select count(*)::int as count from drizzle.__drizzle_migrations`.catch(() => [{ count: 0 }]);
-  report(migrations[0].count === 11, "migrations applied", `${migrations[0].count} of 11`);
+  report(migrations[0].count === 13, "migrations applied", `${migrations[0].count} of 13`);
 
   const tables = await sql`select tablename, rowsecurity from pg_tables where schemaname = 'public'`;
   for (const name of EXPECTED_TABLES) {

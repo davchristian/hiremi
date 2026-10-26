@@ -39,8 +39,6 @@ function employmentLabel(value: string | undefined): string {
 }
 
 export const ashby: SourceAdapter = {
-  complete: true,
-
   async list(source) {
     const res = await fetchFeed(boardUrl(source.slug));
     const json = (await res.json()) as { jobs?: AshbyJob[] };
